@@ -1,0 +1,14 @@
+[project]
+name = "conversational-bi-agent-scaffold"
+version = "0.1.0"
+description = "Conversational BI agent on Agno AgentOS"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "agno[os,google,sqlite]>=2.6",
+    "duckdb>=1.0",
+    "google-genai>=1.0",
+    "openpyxl>=3.1",
+    "pandas>=2.0",
+    "python-dotenv>=1.0",
+]
