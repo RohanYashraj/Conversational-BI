@@ -6,7 +6,7 @@ services:
     name: conversational-bi-agentos
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter # free tier works for a demo; starter keeps it always-on
+    plan: free # free tier works for a demo; starter keeps it always-on
     healthCheckPath: /health
     envVars:
       - key: GOOGLE_API_KEY
