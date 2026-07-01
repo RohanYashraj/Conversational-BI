@@ -40,6 +40,13 @@ def gemini_model() -> Gemini:
     return Gemini(id=GEMINI_MODEL, api_key=api_key)
 
 
+# --- Reasoning / "thinking mode" -------------------------------------------
+# When on, the orchestrator uses Agno's ReasoningTools to think through the
+# problem in visible steps (streamed to the UI as a collapsible "Thinking"
+# panel). It adds model round-trips, so it is a config toggle.
+REASONING_ENABLED = os.getenv("BI_REASONING", "true").lower() == "true"
+
+
 # --- AgentOS / sessions ----------------------------------------------------
 SESSION_DB_PATH = os.getenv("BI_SESSION_DB", str(BASE_DIR.parent / "bi_sessions.db"))
 AGENT_OS_HOST = os.getenv("AGENT_OS_HOST", "localhost")
