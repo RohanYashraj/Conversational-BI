@@ -57,7 +57,7 @@ const SidebarHeader = () => (
         Accenture
       </span>
       <span className="text-[0.6rem] font-medium uppercase tracking-wider text-muted-foreground">
-        Conversational BI
+        KPI Commentary Tool
       </span>
     </div>
   </div>

@@ -1,4 +1,4 @@
-"""AgentOS entry point for the Conversational BI agent.
+"""AgentOS entry point for the KPI Commentary Tool agent.
 
 Run:
     python -m conversational_bi.agent_os
@@ -35,7 +35,7 @@ async def lifespan(app):
 
 agent_os = AgentOS(
     id="conversational-bi-os",
-    name="Conversational BI",
+    name="KPI Commentary Tool",
     description="P&C portfolio Q&A with guarded SQL, charts, and grounded commentary.",
     teams=[bi_team],
     db=db,

@@ -20,7 +20,7 @@ def build_bi_team(*, db: SqliteDb) -> Team:
     """Construct the orchestrator team registered with AgentOS."""
     return Team(
         id="conversational-bi",
-        name="Conversational BI",
+        name="KPI Commentary Tool",
         description=(
             "P&C portfolio Q&A with guarded SQL, charts, and grounded commentary. "
             "Numbers always come from executed queries, never from the model."

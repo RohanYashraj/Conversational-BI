@@ -23,7 +23,7 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Accenture Conversational BI',
+  title: 'Accenture KPI Commentary Tool',
   description:
     'Conversational analytics for portfolio and underwriting teams—grounded in data, powered by AI.'
 }

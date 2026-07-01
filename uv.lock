@@ -267,6 +267,7 @@ dependencies = [
     { name = "google-genai" },
     { name = "openpyxl" },
     { name = "pandas" },
+    { name = "python-dotenv" },
 ]
 
 [package.metadata]
@@ -276,6 +277,7 @@ requires-dist = [
     { name = "google-genai", specifier = ">=1.0" },
     { name = "openpyxl", specifier = ">=3.1" },
     { name = "pandas", specifier = ">=2.0" },
+    { name = "python-dotenv", specifier = ">=1.0" },
 ]
 
 [[package]]

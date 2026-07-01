@@ -1,4 +1,4 @@
-"""Agno tools for the Conversational BI Agent.
+"""Agno tools for the KPI Commentary Tool Agent.
 
 Tools are plain Python functions with type hints and docstrings (the docstring
 is what the model sees). Anything touching numbers delegates to data_layer, so

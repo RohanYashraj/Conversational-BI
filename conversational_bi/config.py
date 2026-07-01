@@ -1,4 +1,4 @@
-"""Central configuration for the Conversational BI Agent POC.
+"""Central configuration for the KPI Commentary Tool Agent POC.
 
 Everything that is likely to change between the demo and a real client
 environment lives here, so moving from the dummy Excel file to a warehouse

@@ -58,7 +58,7 @@ const ChatBlankState = () => {
           }}
           className="inline-flex items-center rounded-full bg-gradient-to-r from-brand-badgeFrom to-brand-badgeTo px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-primary-foreground shadow-sm"
         >
-          Conversational BI
+          KPI Commentary Tool
         </motion.div>
 
         <motion.h1

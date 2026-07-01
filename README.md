@@ -1,4 +1,4 @@
-# Conversational BI Agent — AgentOS (Agno + Gemini + DuckDB)
+# KPI Commentary Tool Agent — AgentOS (Agno + Gemini + DuckDB)
 
 A conversational agent over policy-level P&C data. Ask in plain English; get a
 **computed** number/table, a chart when it helps, and a 1–3 sentence
@@ -57,7 +57,7 @@ The server starts at `http://localhost:8000`.
 1. Open [os.agno.com](https://os.agno.com) and sign in
 2. Click **Add new OS** → **Local**
 3. Enter `http://localhost:8000` and connect
-4. Chat with the **Conversational BI** team
+4. Chat with the **KPI Commentary Tool** team
 
 Use Chrome or Edge for local connections ([connection FAQ](https://docs.agno.com/faq/agentos-connection)).
 

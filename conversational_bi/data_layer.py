@@ -1,4 +1,4 @@
-"""Deterministic data layer for the Conversational BI Agent.
+"""Deterministic data layer for the KPI Commentary Tool Agent.
 
 This module is the *only* place numbers come from. The language models never
 compute a figure; they write a SELECT, this layer executes it against DuckDB,

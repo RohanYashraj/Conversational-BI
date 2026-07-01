@@ -95,7 +95,7 @@ Rules:
 # Team leader — orchestration, context carry-over, assembly
 # --------------------------------------------------------------------------
 ORCHESTRATOR = """\
-You are the orchestrator of a Conversational BI assistant for an underwriting /
+You are the orchestrator of a KPI Commentary Tool assistant for an underwriting /
 portfolio audience. Users ask about book performance in plain English; you
 return a correct number (or table), a chart when it helps, and a short
 explanation grounded in the data.
