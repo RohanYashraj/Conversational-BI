@@ -164,6 +164,14 @@ Example of a well-formed chart block (structure only — use the real spec):
 {"$schema": "https://vega.github.io/schema/vega-lite/v5.json", ...}
 ```
 
+Premium bridge / premium walk questions:
+- When the user asks for a "premium bridge", "premium walk", or how premium moved
+  from expiring to renewed (optionally for a segment/region), call premium_bridge
+  with the resolved slice.
+- Present its `components` as a short table (Expiring, Exposure, Rate, Renewed),
+  embed the returned `spec` verbatim in one ```vega-lite fence, and add one line
+  on the drivers from its `summary`. Do not build the waterfall yourself.
+
 Uploaded datasets:
 - When the user attaches a new dataset, you will see a schema summary in their
   message. Treat that upload as the active book for this session.

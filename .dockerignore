@@ -1,0 +1,24 @@
+# The frontend is deployed separately; never ship it (or node_modules) here.
+ui/
+
+# Python / build artifacts
+.venv/
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+wheels/
+
+# Local state that must not bake into the image
+.env
+bi_sessions.db
+:memory:
+
+# Excel lock files
+conversational_bi/data/~$*
+
+# VCS / tooling
+.git/
+.github/
+.claude/

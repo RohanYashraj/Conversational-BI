@@ -43,7 +43,7 @@ function ChatScrollTopGlass() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 top-0 z-20 h-8 rounded-t-2xl transition-opacity duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] motion-reduce:transition-none"
+      className="pointer-events-none absolute inset-x-0 top-0 z-20 h-8 rounded-t-2xl transition-opacity duration-300 [transition-timing-function:cubic-bezier(0.33,1,0.68,1)] motion-reduce:transition-none"
       style={{
         opacity: veilOpacity,
         background:
@@ -73,7 +73,7 @@ const MessageArea = () => {
       initial="smooth"
     >
       <StickToBottom.Content className="flex min-h-full flex-col justify-center">
-        <div className="mx-auto w-full max-w-2xl space-y-9 px-4 pb-4">
+        <div className="mx-auto w-full max-w-4xl space-y-9 px-4 pb-4">
           <Messages messages={messages} />
         </div>
       </StickToBottom.Content>

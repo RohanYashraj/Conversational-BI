@@ -1,0 +1,24 @@
+# Render blueprint for the AgentOS backend.
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
+# The Next.js UI in ui/ is deployed to Vercel, not here.
+services:
+  - type: web
+    name: conversational-bi-agentos
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter # free tier works for a demo; starter keeps it always-on
+    healthCheckPath: /health
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false # set this secret in the Render dashboard
+      - key: BI_CORS_ORIGINS
+        sync: false # set to your Vercel URL, e.g. https://your-app.vercel.app
+      - key: AGENT_OS_HOST
+        value: 0.0.0.0
+      # Persist sessions on the mounted disk instead of the ephemeral container FS.
+      - key: BI_SESSION_DB
+        value: /var/data/bi_sessions.db
+    disk:
+      name: bi-data
+      mountPath: /var/data
+      sizeGB: 1

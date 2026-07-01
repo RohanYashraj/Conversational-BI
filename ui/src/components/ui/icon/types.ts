@@ -37,8 +37,7 @@ export type IconType =
   | 'references'
   | 'trash'
 
-export interface IconProps
-  extends Omit<SVGAttributes<SVGSVGElement>, 'type'> {
+export interface IconProps extends Omit<SVGAttributes<SVGSVGElement>, 'type'> {
   type: IconType
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'dot' | 'xxs' | 'default'
   className?: string

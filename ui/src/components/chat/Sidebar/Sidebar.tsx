@@ -30,16 +30,15 @@ const SIDEBAR_COLLAPSED_WIDTH_PX = 44
 
 function clampSidebarWidth(
   w: number,
-  viewportWidth: number = typeof window !== 'undefined' ? window.innerWidth : 1200
+  viewportWidth: number = typeof window !== 'undefined'
+    ? window.innerWidth
+    : 1200
 ): number {
   const maxByViewport = Math.max(
     SIDEBAR_MIN_WIDTH_PX,
     Math.min(SIDEBAR_MAX_WIDTH_PX, viewportWidth - 280)
   )
-  return Math.min(
-    maxByViewport,
-    Math.max(SIDEBAR_MIN_WIDTH_PX, Math.round(w))
-  )
+  return Math.min(maxByViewport, Math.max(SIDEBAR_MIN_WIDTH_PX, Math.round(w)))
 }
 
 const SidebarHeader = () => (
@@ -213,7 +212,9 @@ const Endpoint = () => {
             tabIndex={0}
             aria-label="Edit AgentOS endpoint"
             transition={
-              reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 10 }
+              reduceMotion
+                ? { duration: 0 }
+                : { type: 'spring', stiffness: 400, damping: 10 }
             }
           >
             <AnimatePresence mode="wait">
@@ -227,7 +228,8 @@ const Endpoint = () => {
                   transition={{ duration: reduceMotion ? 0 : 0.2 }}
                 >
                   <p className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-primary">
-                    <Icon type="edit" size="xxs" aria-hidden="true" /> EDIT AGENTOS
+                    <Icon type="edit" size="xxs" aria-hidden="true" /> EDIT
+                    AGENTOS
                   </p>
                 </motion.div>
               ) : (
@@ -264,7 +266,10 @@ const Endpoint = () => {
             <motion.div
               key={isRotating ? 'rotating' : 'idle'}
               animate={{ rotate: reduceMotion ? 0 : isRotating ? 360 : 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.5, ease: 'easeInOut' }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.5,
+                ease: 'easeInOut'
+              }}
             >
               <Icon type="refresh" size="xs" aria-hidden="true" />
             </motion.div>
@@ -379,9 +384,7 @@ const Sidebar = ({
     focusChatInput()
   }
 
-  const asideWidthPx = isCollapsed
-    ? SIDEBAR_COLLAPSED_WIDTH_PX
-    : sidebarWidthPx
+  const asideWidthPx = isCollapsed ? SIDEBAR_COLLAPSED_WIDTH_PX : sidebarWidthPx
 
   return (
     <motion.aside
@@ -442,7 +445,10 @@ const Sidebar = ({
                   className={`flex shrink-0 flex-col items-stretch gap-2 ${sidebarTrack}`}
                   initial={{ opacity: reduceMotion ? 1 : 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: reduceMotion ? 0 : 0.5, ease: 'easeInOut' }}
+                  transition={{
+                    duration: reduceMotion ? 0 : 0.5,
+                    ease: 'easeInOut'
+                  }}
                 >
                   <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Mode

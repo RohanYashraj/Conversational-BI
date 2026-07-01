@@ -8,7 +8,12 @@ import { getDashboardAPI } from '@/api/os'
 import { constructEndpointUrl } from '@/lib/constructEndpointUrl'
 import useAIChatStreamHandler from '@/hooks/useAIStreamHandler'
 import { useStore } from '@/store'
-import type { BriefingItem, DashboardCut, DashboardData } from '@/types/os'
+import type {
+  BriefingItem,
+  DashboardCut,
+  DashboardData,
+  PremiumBridge as PremiumBridgeData
+} from '@/types/os'
 import VegaLiteChart from '@/components/ui/typography/MarkdownRenderer/VegaLiteChart'
 
 // ---- formatting helpers ---------------------------------------------------
@@ -82,14 +87,17 @@ const DRILL: Record<
   }
 }
 
-const HEADLINE: Array<{ key: string; label: string; kind: 'money' | 'pct' | 'int' }> =
-  [
-    { key: 'total_gwp', label: 'Total GWP', kind: 'money' },
-    { key: 'wtd_rate_change', label: 'Weighted Rate Change', kind: 'pct' },
-    { key: 'avg_loss_ratio', label: 'Avg Loss Ratio', kind: 'pct' },
-    { key: 'retention', label: 'Renewal Retention', kind: 'pct' },
-    { key: 'policy_count', label: 'Policies', kind: 'int' }
-  ]
+const HEADLINE: Array<{
+  key: string
+  label: string
+  kind: 'money' | 'pct' | 'int'
+}> = [
+  { key: 'total_gwp', label: 'Total GWP', kind: 'money' },
+  { key: 'wtd_rate_change', label: 'Weighted Rate Change', kind: 'pct' },
+  { key: 'avg_loss_ratio', label: 'Avg Loss Ratio', kind: 'pct' },
+  { key: 'retention', label: 'Renewal Retention', kind: 'pct' },
+  { key: 'policy_count', label: 'Policies', kind: 'int' }
+]
 
 // ---- components -----------------------------------------------------------
 const KpiCard = ({ label, value }: { label: string; value: string }) => (
@@ -97,7 +105,9 @@ const KpiCard = ({ label, value }: { label: string; value: string }) => (
     <p className="text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
       {label}
     </p>
-    <p className="font-display text-xl font-semibold text-foreground">{value}</p>
+    <p className="font-display text-xl font-semibold text-foreground">
+      {value}
+    </p>
   </div>
 )
 
@@ -144,7 +154,11 @@ const CutCard = ({
               return (
                 <tr
                   key={`${dimVal}-${i}`}
-                  onClick={clickable ? () => onDrill?.(meta!.prompt(dimVal)) : undefined}
+                  onClick={
+                    clickable
+                      ? () => onDrill?.(meta!.prompt(dimVal))
+                      : undefined
+                  }
                   className={`border-b border-border/60 last:border-b-0 ${
                     clickable
                       ? 'cursor-pointer transition-colors hover:bg-primary/5'
@@ -173,12 +187,18 @@ const CutCard = ({
   )
 }
 
-const TONE_STYLES: Record<BriefingItem['tone'], { bar: string; dot: string; label: string }> =
-  {
-    watch: { bar: 'border-l-amber-500', dot: 'bg-amber-500', label: 'Watch' },
-    positive: { bar: 'border-l-emerald-500', dot: 'bg-emerald-500', label: 'Positive' },
-    info: { bar: 'border-l-border', dot: 'bg-muted-foreground', label: 'FYI' }
-  }
+const TONE_STYLES: Record<
+  BriefingItem['tone'],
+  { bar: string; dot: string; label: string }
+> = {
+  watch: { bar: 'border-l-amber-500', dot: 'bg-amber-500', label: 'Watch' },
+  positive: {
+    bar: 'border-l-emerald-500',
+    dot: 'bg-emerald-500',
+    label: 'Positive'
+  },
+  info: { bar: 'border-l-border', dot: 'bg-muted-foreground', label: 'FYI' }
+}
 
 const Briefing = ({
   items,
@@ -202,12 +222,18 @@ const Briefing = ({
               key={item.id}
               onClick={clickable ? () => onDrill?.(item.drill) : undefined}
               className={`flex flex-col gap-1 rounded-lg border border-l-4 border-border bg-card/60 p-3 ${tone.bar} ${
-                clickable ? 'cursor-pointer transition-colors hover:bg-muted' : ''
+                clickable
+                  ? 'cursor-pointer transition-colors hover:bg-muted'
+                  : ''
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${tone.dot}`} />
-                <p className="text-xs font-semibold text-foreground">{item.title}</p>
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${tone.dot}`}
+                />
+                <p className="text-xs font-semibold text-foreground">
+                  {item.title}
+                </p>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 {item.detail}
@@ -216,6 +242,43 @@ const Briefing = ({
           )
         })}
       </div>
+    </div>
+  )
+}
+
+const PremiumBridge = ({
+  bridge,
+  onDrill
+}: {
+  bridge: PremiumBridgeData
+  onDrill?: (prompt: string) => void
+}) => {
+  if (!bridge || bridge.error || !bridge.spec) return null
+  const clickable = Boolean(onDrill)
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card/60 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-foreground">Premium Bridge</p>
+        {clickable && (
+          <button
+            type="button"
+            onClick={() =>
+              onDrill?.(
+                'Show the premium bridge and explain what drove the move from expiring to renewed premium.'
+              )
+            }
+            className="text-[0.6rem] uppercase tracking-wide text-primary hover:underline"
+          >
+            Explain drivers
+          </button>
+        )}
+      </div>
+      <VegaLiteChart source={JSON.stringify(bridge.spec)} fullWidth />
+      {bridge.summary && (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {bridge.summary}
+        </p>
+      )}
     </div>
   )
 }
@@ -239,8 +302,10 @@ const QuarterlyTrend = ({ cut }: { cut: DashboardCut }) => {
   }
   return (
     <div className="flex flex-col gap-1 rounded-lg border border-border bg-card/60 p-3">
-      <p className="text-xs font-semibold text-foreground">Quarterly Rate Trend</p>
-      <VegaLiteChart source={JSON.stringify(spec)} />
+      <p className="text-xs font-semibold text-foreground">
+        Quarterly Rate Trend
+      </p>
+      <VegaLiteChart source={JSON.stringify(spec)} fullWidth />
     </div>
   )
 }
@@ -313,13 +378,21 @@ const DashboardOverview = () => {
           const v = data.headline[key]
           if (v === null || v === undefined) return null
           const value =
-            kind === 'money' ? fmtCurrency(v) : kind === 'pct' ? fmtPct(v) : fmtInt(v)
+            kind === 'money'
+              ? fmtCurrency(v)
+              : kind === 'pct'
+                ? fmtPct(v)
+                : fmtInt(v)
           return <KpiCard key={key} label={label} value={value} />
         })}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <CutCard name="by_segment" cut={data.cuts.by_segment} onDrill={onDrill} />
+        <CutCard
+          name="by_segment"
+          cut={data.cuts.by_segment}
+          onDrill={onDrill}
+        />
         <CutCard name="by_region" cut={data.cuts.by_region} onDrill={onDrill} />
         <CutCard
           name="by_underwriter"
@@ -333,7 +406,10 @@ const DashboardOverview = () => {
         />
       </div>
 
-      <QuarterlyTrend cut={data.cuts.quarterly_trend} />
+      <div className="flex flex-col gap-4">
+        <PremiumBridge bridge={data.premium_bridge} onDrill={onDrill} />
+        <QuarterlyTrend cut={data.cuts.quarterly_trend} />
+      </div>
     </section>
   )
 }

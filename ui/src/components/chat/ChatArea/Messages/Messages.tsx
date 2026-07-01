@@ -43,7 +43,9 @@ const ReferenceItem: FC<ReferenceItemProps> = ({ reference }) => (
     <p className="min-w-0 truncate text-sm font-medium text-foreground">
       {reference.name}
     </p>
-    <p className="truncate text-xs text-muted-foreground">{reference.content}</p>
+    <p className="truncate text-xs text-muted-foreground">
+      {reference.content}
+    </p>
   </div>
 )
 

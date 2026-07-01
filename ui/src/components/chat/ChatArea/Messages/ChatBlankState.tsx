@@ -66,7 +66,7 @@ const ChatBlankState = () => {
             duration: reduceMotion ? 0 : 0.5,
             delay: reduceMotion ? 0 : 0.2
           }}
-          className="font-display text-pretty text-balance text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-3xl"
+          className="text-balance text-pretty font-display text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-3xl"
         >
           Ask questions about your portfolio data
         </motion.h1>

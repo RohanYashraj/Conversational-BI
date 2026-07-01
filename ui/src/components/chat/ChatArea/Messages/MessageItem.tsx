@@ -13,8 +13,7 @@ interface MessageProps {
 }
 
 /** Left gutter: fixed width so meta rows + bubbles share one text edge. */
-export const MESSAGE_AVATAR_COL =
-  'flex w-9 shrink-0 justify-center'
+export const MESSAGE_AVATAR_COL = 'flex w-9 shrink-0 justify-center'
 export const MESSAGE_THREAD_GAP = 'gap-4'
 
 const AgentMessage = ({ message }: MessageProps) => {
@@ -78,7 +77,12 @@ const AgentMessage = ({ message }: MessageProps) => {
       className={`flex flex-row items-start font-sans ${MESSAGE_THREAD_GAP}`}
     >
       <div className={`${MESSAGE_AVATAR_COL} pt-0.5`}>
-        <Icon type="agent" size="sm" className="text-primary" aria-hidden="true" />
+        <Icon
+          type="agent"
+          size="sm"
+          className="text-primary"
+          aria-hidden="true"
+        />
         <span className="sr-only">Agent</span>
       </div>
       <div className="min-w-0 flex-1">{messageContent}</div>
@@ -92,10 +96,17 @@ const UserMessage = memo(({ message }: MessageProps) => {
       className={`flex items-start text-start max-md:break-words ${MESSAGE_THREAD_GAP}`}
     >
       <div className={`${MESSAGE_AVATAR_COL} pt-3`}>
-        <Icon type="user" size="sm" className="text-foreground" aria-hidden="true" />
+        <Icon
+          type="user"
+          size="sm"
+          className="text-foreground"
+          aria-hidden="true"
+        />
       </div>
-      <div className="min-w-0 max-w-[min(100%,42rem)] rounded-2xl rounded-tl-md border border-border/60 bg-gradient-to-br from-secondary/90 to-muted/80 px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm">
-        {message.content && <p className="whitespace-pre-wrap">{message.content}</p>}
+      <div className="min-w-0 max-w-[min(100%,56rem)] rounded-2xl rounded-tl-md border border-border/60 bg-gradient-to-br from-secondary/90 to-muted/80 px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm">
+        {message.content && (
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        )}
         {message.attachments && message.attachments.length > 0 && (
           <div
             className={`flex flex-wrap gap-2 ${message.content ? 'mt-2' : ''}`}

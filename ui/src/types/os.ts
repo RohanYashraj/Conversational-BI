@@ -231,11 +231,20 @@ export interface BriefingItem {
   drill: string
 }
 
+export interface PremiumBridge {
+  error: string | null
+  scope?: string
+  summary?: string
+  spec?: Record<string, unknown> | null
+  components?: Array<Record<string, string | number | null>>
+}
+
 export interface DashboardData {
   table: string
   row_count: number
   headline: Record<string, number | null>
   briefing: BriefingItem[]
+  premium_bridge: PremiumBridge
   cuts: {
     by_segment: DashboardCut
     by_region: DashboardCut
