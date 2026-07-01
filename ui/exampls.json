@@ -7,7 +7,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -69,7 +69,7 @@
           "role": "Ingest, parse, and standardize raw claims data from multiple source formats",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -92,7 +92,7 @@
           "role": "Extract and validate earned premium, policy counts, and exposure units by accident year and line of business",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -115,7 +115,7 @@
           "role": "Perform comprehensive data quality checks on claims and exposure data before reserving analysis",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -144,7 +144,7 @@
           "role": "Construct paid loss, incurred loss, and claim count development triangles from aggregated claims data",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -175,7 +175,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -235,7 +235,7 @@
           "role": "Calculate and select age-to-age loss development factors from triangles using multiple averaging methods",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -263,7 +263,7 @@
           "role": "Estimate loss development tail factors beyond the observable triangle using curve fitting and industry benchmarks",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -290,7 +290,7 @@
           "role": "Compute cumulative development factors (CDFs/LDFs) from selected ATA factors and tail, and produce the development factor table",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -314,7 +314,7 @@
           "role": "Detect and quantify calendar year effects (e.g., legal/social inflation shocks, economic events) embedded in loss development triangles",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -341,7 +341,7 @@
           "role": "Identify unusually large individual losses that distort development patterns and recommend appropriate treatment methods",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -374,7 +374,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -432,7 +432,7 @@
           "role": "Apply WC-specific reserving techniques accounting for lifetime medical benefits, permanent total disability, and state-by-state regulatory differences",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -461,7 +461,7 @@
           "role": "Handle GL reserving with focus on long-tail development, nuclear verdicts, social inflation, and claims-made vs occurrence policy structure differences",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -489,7 +489,7 @@
           "role": "Apply Med Mal-specific reserving techniques for the longest-tail casualty line, including occurrence vs claims-made conversion and extended reporting endorsements",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -516,7 +516,7 @@
           "role": "Reserve for commercial and personal auto lines with separate treatment of bodily injury, property damage, PIP, and collision/comprehensive",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -542,7 +542,7 @@
           "role": "Reserve for property lines with separate treatment of catastrophe losses, distinguishing CAT and non-CAT reserves using event-based methods",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -575,7 +575,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -639,7 +639,7 @@
           "role": "Apply the classical chain ladder (development method) to estimate IBNR reserves using selected CDFs",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -664,7 +664,7 @@
           "role": "Apply the BF method combining a priori expected losses with actual emerged losses to produce blended IBNR estimates",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -691,7 +691,7 @@
           "role": "Derive expected loss ratios from historical data using the Cape Cod credibility technique",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -717,7 +717,7 @@
           "role": "Decompose losses into frequency and severity components, develop each separately, and recombine for ultimate loss estimates",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -745,7 +745,7 @@
           "role": "Fit Clark's maximum likelihood growth curve model to loss triangles for simultaneous parameter estimation and reserve uncertainty",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -771,7 +771,7 @@
           "role": "Apply Generalized Linear Model (GLM) methods for reserving, including the ODP-Poisson chain ladder and cross-classified models",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -796,7 +796,7 @@
           "role": "Apply the Merz-Wüthrich Paid-Incurred Chain model that jointly develops paid and incurred triangles for consistent reserve estimates",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -826,7 +826,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -888,7 +888,7 @@
           "role": "Analyze Pearson and deviance residuals from reserving models to detect model inadequacies, outliers, and systematic patterns",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -916,7 +916,7 @@
           "role": "Compare the company's loss development factors, loss ratios, and reserve estimates to industry benchmarks from regulatory and rating agency sources",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -944,7 +944,7 @@
           "role": "Track how prior year reserve estimates have developed, compute one-year and calendar-year reserve development, and assess historic reserve adequacy",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -971,7 +971,7 @@
           "role": "Identify unusually large individual losses that distort development patterns and recommend appropriate treatment methods",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -999,7 +999,7 @@
           "role": "Detect and quantify calendar year effects (e.g., legal/social inflation shocks, economic events) embedded in loss development triangles",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1031,7 +1031,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -1094,7 +1094,7 @@
           "role": "Apply Mack's distribution-free stochastic chain ladder to compute reserve standard errors and prediction intervals",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1123,7 +1123,7 @@
           "role": "Apply the England & Verrall ODP bootstrap method to generate a full empirical reserve distribution through simulation",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1155,7 +1155,7 @@
           "role": "Construct deterministic reserve scenarios (base, adverse, optimistic) and stress-test assumptions to bound reserve uncertainty",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1187,7 +1187,7 @@
           "role": "Fit Clark's maximum likelihood growth curve model to loss triangles for simultaneous parameter estimation and reserve uncertainty",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1213,7 +1213,7 @@
           "role": "Aggregate reserve distributions across lines of business using a correlation structure to produce a company-wide reserve distribution",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1246,7 +1246,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -1311,7 +1311,7 @@
           "mode": "coordinate",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "tools": {
@@ -1373,7 +1373,7 @@
               "role": "Analyze Pearson and deviance residuals from reserving models to detect model inadequacies, outliers, and systematic patterns",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1401,7 +1401,7 @@
               "role": "Compare the company's loss development factors, loss ratios, and reserve estimates to industry benchmarks from regulatory and rating agency sources",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1429,7 +1429,7 @@
               "role": "Track how prior year reserve estimates have developed, compute one-year and calendar-year reserve development, and assess historic reserve adequacy",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1456,7 +1456,7 @@
               "role": "Identify unusually large individual losses that distort development patterns and recommend appropriate treatment methods",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1484,7 +1484,7 @@
               "role": "Detect and quantify calendar year effects (e.g., legal/social inflation shocks, economic events) embedded in loss development triangles",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1516,7 +1516,7 @@
           "mode": "coordinate",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "tools": {
@@ -1579,7 +1579,7 @@
               "role": "Apply Mack's distribution-free stochastic chain ladder to compute reserve standard errors and prediction intervals",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1608,7 +1608,7 @@
               "role": "Apply the England & Verrall ODP bootstrap method to generate a full empirical reserve distribution through simulation",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1640,7 +1640,7 @@
               "role": "Construct deterministic reserve scenarios (base, adverse, optimistic) and stress-test assumptions to bound reserve uncertainty",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1672,7 +1672,7 @@
               "role": "Fit Clark's maximum likelihood growth curve model to loss triangles for simultaneous parameter estimation and reserve uncertainty",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1698,7 +1698,7 @@
               "role": "Aggregate reserve distributions across lines of business using a correlation structure to produce a company-wide reserve distribution",
               "model": {
                 "name": "Gemini",
-                "model": "gemini-3.1-flash-lite-preview",
+                "model": "gemini-3.1-flash-lite",
                 "provider": "Google"
               },
               "system_message": {
@@ -1729,7 +1729,7 @@
           "role": "Compare the company's loss development factors, loss ratios, and reserve estimates to industry benchmarks from regulatory and rating agency sources",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1757,7 +1757,7 @@
           "role": "Track how prior year reserve estimates have developed, compute one-year and calendar-year reserve development, and assess historic reserve adequacy",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1784,7 +1784,7 @@
           "role": "Construct deterministic reserve scenarios (base, adverse, optimistic) and stress-test assumptions to bound reserve uncertainty",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1821,7 +1821,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -1887,7 +1887,7 @@
           "role": "Write clear, professional actuarial narrative sections for reserve studies, including executive summaries, methodology descriptions, and assumption justifications",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1917,7 +1917,7 @@
           "role": "Format and produce all standard actuarial reserving exhibits in professional format suitable for management, board, and regulatory review",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1950,7 +1950,7 @@
           "role": "Synthesize all reserve study findings into a clear, concise management summary suitable for CFO, CRO, Audit Committee, and Board presentations",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -1985,7 +1985,7 @@
           "role": "Estimate reserves for Unallocated Loss Adjustment Expense (internal claim handling costs) using Kittel's, Johnson's, or the Paid-to-Paid method",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -2017,7 +2017,7 @@
       "mode": "coordinate",
       "model": {
         "name": "Gemini",
-        "model": "gemini-3.1-flash-lite-preview",
+        "model": "gemini-3.1-flash-lite",
         "provider": "Google"
       },
       "tools": {
@@ -2079,7 +2079,7 @@
           "role": "Prepare NAIC Annual Statement Schedule P (loss development triangles and reserve exhibits) for regulatory filing",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -2109,7 +2109,7 @@
           "role": "Draft the Actuarial Opinion and Actuarial Report supporting the Annual Statement reserve certification in accordance with NAIC and ASOP requirements",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -2142,7 +2142,7 @@
           "role": "Monitor and report on regulatory changes, legal environment, economic conditions, and macroeconomic factors affecting reserve adequacy",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {
@@ -2174,7 +2174,7 @@
           "role": "Estimate reserves for Unallocated Loss Adjustment Expense (internal claim handling costs) using Kittel's, Johnson's, or the Paid-to-Paid method",
           "model": {
             "name": "Gemini",
-            "model": "gemini-3.1-flash-lite-preview",
+            "model": "gemini-3.1-flash-lite",
             "provider": "Google"
           },
           "system_message": {

@@ -109,7 +109,7 @@ def load_book(df: pd.DataFrame | None = None) -> duckdb.DuckDBPyConnection:
         con = duckdb.connect(database=":memory:")
         con.register("_src_df", renamed)
         con.execute(
-            f'CREATE TABLE {config.TABLE_NAME} AS SELECT * FROM _src_df'
+            f'CREATE TABLE "{config.TABLE_NAME}" AS SELECT * FROM _src_df'
         )
         con.unregister("_src_df")
         _con = con
@@ -141,7 +141,7 @@ def get_schema() -> dict[str, Any]:
         cats: list[Any] = []
         if any(t in dtype.upper() for t in ("VARCHAR", "TEXT", "CHAR", "BOOLEAN")):
             distinct = con.execute(
-                f'SELECT DISTINCT "{sql_name}" AS v FROM {config.TABLE_NAME} '
+                f'SELECT DISTINCT "{sql_name}" AS v FROM "{config.TABLE_NAME}" '
                 f'WHERE "{sql_name}" IS NOT NULL LIMIT {config.CATEGORICAL_MAX_CARDINALITY + 1}'
             ).fetchdf()["v"].tolist()
             if len(distinct) <= config.CATEGORICAL_MAX_CARDINALITY:
@@ -156,7 +156,7 @@ def get_schema() -> dict[str, Any]:
         )
     return {
         "table": config.TABLE_NAME,
-        "row_count": con.execute(f"SELECT COUNT(*) FROM {config.TABLE_NAME}").fetchone()[0],
+        "row_count": con.execute(f'SELECT COUNT(*) FROM "{config.TABLE_NAME}"').fetchone()[0],
         "columns": columns,
     }
 
@@ -245,67 +245,30 @@ def run_sql(sql: str) -> QueryResult:
 
 
 # --------------------------------------------------------------------------
-# Self-test: exercises the guard and a couple of aggregations on synthetic
-# data with the real schema. Run: python -m conversational_bi.data_layer
+# Self-test: exercises the guard and a couple of aggregations against the real
+# configured book (config.DATA_PATH). Run: python -m conversational_bi.data_layer
 # --------------------------------------------------------------------------
-def _synthetic_book(n: int = 60) -> pd.DataFrame:
-    import random
-    random.seed(7)
-    segments = ["Financial Lines", "Liability", "Property"]
-    regions = ["North America", "Europe", "Asia"]
-    quarters = ["Q1", "Q2", "Q3", "Q4"]
-    uw = ["A. Rao", "B. Singh", "C. Diaz"]
-    rows = []
-    for i in range(n):
-        seg = random.choice(segments)
-        rows.append({
-            "Policy ID": f"P{i:04d}",
-            "Account ID": f"ACC{random.randint(1, 12):03d}",
-            "Account Name": f"Account {random.randint(1, 12)}",
-            "Month": random.randint(1, 12),
-            "Quarter": random.choice(quarters),
-            "Segment": seg,
-            "SubSegment": seg + " Sub",
-            "Ren GWP": round(random.uniform(50_000, 500_000), 2),
-            "Expiry GWP": round(random.uniform(50_000, 500_000), 2),
-            "Rate Change": round(random.uniform(-0.10, 0.12), 4),
-            "Expiry Adjusted GWP": round(random.uniform(50_000, 500_000), 2),
-            "Premium Change": round(random.uniform(-50_000, 50_000), 2),
-            "Exposure & Other Change": round(random.uniform(-0.05, 0.05), 4),
-            "Geography": random.choice(regions),
-            "Region": random.choice(regions),
-            "Country": "Country " + str(random.randint(1, 5)),
-            "Effective Date": "2026-01-01",
-            "Expiration Date": "2026-12-31",
-            "Layer": random.choice(["Primary", "Excess"]),
-            "Limit": random.choice([1_000_000, 5_000_000, 10_000_000]),
-            "Retention/Deductible": random.choice([0, 50_000, 250_000]),
-            "Branch/Office": random.choice(["London", "New York", "Singapore"]),
-            "Underwriter": random.choice(uw),
-            "Loss Ratio": round(random.uniform(0.45, 0.85), 3),
-            "Policy Status": random.choice(["Bound", "Quoted", "Lapsed"]),
-            "New or Renewal": random.choice(["New", "Renewal"]),
-        })
-    return pd.DataFrame(rows)
-
-
 if __name__ == "__main__":
-    load_book(_synthetic_book())
+    load_book()  # reads config.DATA_PATH
     schema = get_schema()
     print(f"Loaded {schema['row_count']} rows, {len(schema['columns'])} columns.")
-    print("Sample categorical -> Segment values:",
-          next(c["categorical_values"] for c in schema["columns"] if c["sql_name"] == "segment"))
+    sql_names = {c["sql_name"] for c in schema["columns"]}
+    loss_col = next((c for c in ("priced_loss_ratio", "loss_ratio") if c in sql_names), None)
 
-    print("\n[OK query] premium-weighted rate change by segment:")
-    res = run_sql(
-        'SELECT segment, '
-        'SUM(rate_change * expiry_gwp) / SUM(expiry_gwp) AS wtd_rate_change, '
-        'AVG(loss_ratio) AS avg_loss_ratio, COUNT(*) AS n '
-        f'FROM {config.TABLE_NAME} GROUP BY segment ORDER BY wtd_rate_change'
-    )
-    for r in res.rows:
-        print("  ", r)
-    print("   executed SQL ends with LIMIT?:", bool(_LIMIT_RE.search(res.sql)))
+    if {"segment", "rate_change", "expiry_gwp"} <= sql_names and loss_col:
+        print("\n[OK query] premium-weighted rate change by segment:")
+        res = run_sql(
+            'SELECT segment, '
+            'SUM(rate_change * expiry_gwp) / SUM(expiry_gwp) AS wtd_rate_change, '
+            f'AVG({loss_col}) AS avg_loss_ratio, COUNT(*) AS n '
+            f'FROM "{config.TABLE_NAME}" GROUP BY segment ORDER BY wtd_rate_change'
+        )
+        for r in res.rows:
+            print("  ", r)
+        print("   executed SQL ends with LIMIT?:", bool(_LIMIT_RE.search(res.sql)))
+    else:
+        print("\n(Skipping the segment aggregation self-test: the configured book "
+              "does not expose the expected P&C columns.)")
 
     print("\n[Blocked] DROP attempt:")
     print("  ", run_sql("DROP TABLE policies").error)

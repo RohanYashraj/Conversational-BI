@@ -26,7 +26,7 @@ TABLE_NAME = "policies"
 
 # --- Model -----------------------------------------------------------------
 # Gemini, matching the SSSIA stack. Override with env vars to swap models.
-GEMINI_MODEL = os.getenv("BI_GEMINI_MODEL", "gemini-3.1-flash-lite")
+GEMINI_MODEL = os.getenv("BI_GEMINI_MODEL", "gemini-2.0-flash")
 # GOOGLE_API_KEY must be set in the environment for the Gemini client.
 
 
