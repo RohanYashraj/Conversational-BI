@@ -8,7 +8,7 @@ import { getDashboardAPI } from '@/api/os'
 import { constructEndpointUrl } from '@/lib/constructEndpointUrl'
 import useAIChatStreamHandler from '@/hooks/useAIStreamHandler'
 import { useStore } from '@/store'
-import type { DashboardCut, DashboardData } from '@/types/os'
+import type { BriefingItem, DashboardCut, DashboardData } from '@/types/os'
 import VegaLiteChart from '@/components/ui/typography/MarkdownRenderer/VegaLiteChart'
 
 // ---- formatting helpers ---------------------------------------------------
@@ -173,6 +173,53 @@ const CutCard = ({
   )
 }
 
+const TONE_STYLES: Record<BriefingItem['tone'], { bar: string; dot: string; label: string }> =
+  {
+    watch: { bar: 'border-l-amber-500', dot: 'bg-amber-500', label: 'Watch' },
+    positive: { bar: 'border-l-emerald-500', dot: 'bg-emerald-500', label: 'Positive' },
+    info: { bar: 'border-l-border', dot: 'bg-muted-foreground', label: 'FYI' }
+  }
+
+const Briefing = ({
+  items,
+  onDrill
+}: {
+  items: BriefingItem[]
+  onDrill?: (prompt: string) => void
+}) => {
+  if (!items || items.length === 0) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        What to look at
+      </p>
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+        {items.map((item) => {
+          const tone = TONE_STYLES[item.tone] ?? TONE_STYLES.info
+          const clickable = Boolean(onDrill)
+          return (
+            <div
+              key={item.id}
+              onClick={clickable ? () => onDrill?.(item.drill) : undefined}
+              className={`flex flex-col gap-1 rounded-lg border border-l-4 border-border bg-card/60 p-3 ${tone.bar} ${
+                clickable ? 'cursor-pointer transition-colors hover:bg-muted' : ''
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${tone.dot}`} />
+                <p className="text-xs font-semibold text-foreground">{item.title}</p>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {item.detail}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const QuarterlyTrend = ({ cut }: { cut: DashboardCut }) => {
   if (!cut || cut.error || cut.rows.length === 0) return null
   const spec = {
@@ -258,6 +305,8 @@ const DashboardOverview = () => {
           book. Ask a question below, or click a row to drill in.
         </p>
       </div>
+
+      <Briefing items={data.briefing} onDrill={onDrill} />
 
       <div className="flex flex-wrap gap-3">
         {HEADLINE.map(({ key, label, kind }) => {

@@ -223,10 +223,19 @@ export interface DashboardCut {
   error: string | null
 }
 
+export interface BriefingItem {
+  id: string
+  tone: 'watch' | 'positive' | 'info'
+  title: string
+  detail: string
+  drill: string
+}
+
 export interface DashboardData {
   table: string
   row_count: number
   headline: Record<string, number | null>
+  briefing: BriefingItem[]
   cuts: {
     by_segment: DashboardCut
     by_region: DashboardCut

@@ -155,6 +155,116 @@ def _json_safe(obj: Any) -> Any:
     return obj
 
 
+def _fmt_pct(v: Any) -> str:
+    return f"{v * 100:.1f}%" if isinstance(v, (int, float)) else "n/a"
+
+
+def _fmt_money(v: Any) -> str:
+    if not isinstance(v, (int, float)):
+        return "n/a"
+    a = abs(v)
+    if a >= 1_000_000:
+        return f"${v / 1_000_000:.2f}M"
+    if a >= 1_000:
+        return f"${v / 1_000:.1f}K"
+    return f"${v:.0f}"
+
+
+def _build_briefing(headline: dict[str, Any], cuts: dict[str, Any]) -> list[dict[str, Any]]:
+    """Derive the 2-4 most notable, decision-useful movements from the already
+    computed cuts — softest pricing, margin risk, concentration, rate momentum.
+    Every figure is a real computed number; each finding drills into full
+    commentary when clicked. No LLM here, so the landing view is instant and
+    can't hallucinate."""
+    findings: list[dict[str, Any]] = []
+    book_lr = headline.get("avg_loss_ratio")
+    total = headline.get("total_gwp")
+    segs = cuts.get("by_segment", {}).get("rows", [])
+
+    # 1) Softest pricing segment.
+    rated = [r for r in segs if isinstance(r.get("wtd_rate_change"), (int, float))]
+    if rated:
+        s = min(rated, key=lambda r: r["wtd_rate_change"])
+        lr = s.get("avg_loss_ratio")
+        detail = f"Weighted rate change is {_fmt_pct(s['wtd_rate_change'])}, the softest of {len(rated)} segments"
+        if isinstance(lr, (int, float)) and isinstance(book_lr, (int, float)):
+            rel = "below" if lr < book_lr else "above"
+            detail += f", on a {_fmt_pct(lr)} loss ratio ({rel} the {_fmt_pct(book_lr)} book average)."
+        else:
+            detail += "."
+        findings.append({
+            "id": "softest",
+            "tone": "watch" if s["wtd_rate_change"] < 0 else "info",
+            "title": f"Softest pricing — {s['segment']}",
+            "detail": detail,
+            "drill": (
+                f"Why is {s['segment']} the softest segment on rate? Break down its "
+                "weighted rate change, loss ratio and new-vs-renewal mix, and explain the driver."
+            ),
+        })
+
+    # 2) Highest loss ratio segment (margin watch).
+    lrs = [r for r in segs if isinstance(r.get("avg_loss_ratio"), (int, float))]
+    if lrs and isinstance(book_lr, (int, float)):
+        s = max(lrs, key=lambda r: r["avg_loss_ratio"])
+        delta = s["avg_loss_ratio"] - book_lr
+        findings.append({
+            "id": "loss",
+            "tone": "watch" if delta > 0.03 else "info",
+            "title": f"Highest loss ratio — {s['segment']}",
+            "detail": (
+                f"Loss ratio is {_fmt_pct(s['avg_loss_ratio'])}, {_fmt_pct(delta)} above the "
+                f"{_fmt_pct(book_lr)} book average, on {_fmt_money(s.get('premium'))} of premium."
+            ),
+            "drill": (
+                f"Break down {s['segment']}: loss ratio, rate change and premium — "
+                "what is driving the loss ratio?"
+            ),
+        })
+
+    # 3) Account concentration.
+    accts = cuts.get("top_accounts", {}).get("rows", [])
+    if accts and isinstance(total, (int, float)) and total:
+        top1 = accts[0]
+        top1_share = (top1.get("premium") or 0) / total
+        topn = sum((a.get("premium") or 0) for a in accts) / total
+        findings.append({
+            "id": "concentration",
+            "tone": "watch" if top1_share > 0.10 else "info",
+            "title": "Account concentration",
+            "detail": (
+                f"The largest account ({top1.get('account_name')}) is {_fmt_pct(top1_share)} of GWP; "
+                f"the top {len(accts)} are {_fmt_pct(topn)}."
+            ),
+            "drill": (
+                "Show the top accounts by premium and assess how concentrated the book is — "
+                "what share sits in the largest names?"
+            ),
+        })
+
+    # 4) Rate momentum over the quarters.
+    q = [r for r in cuts.get("quarterly_trend", {}).get("rows", [])
+         if isinstance(r.get("wtd_rate_change"), (int, float))]
+    if len(q) >= 2:
+        first, last = q[0], q[-1]
+        d = last["wtd_rate_change"] - first["wtd_rate_change"]
+        tone, word = ("watch", "cooled") if d < -0.01 else ("positive", "firmed") if d > 0.01 else ("info", "held steady")
+        findings.append({
+            "id": "momentum",
+            "tone": tone,
+            "title": "Rate momentum",
+            "detail": (
+                f"Weighted rate change {word} from {_fmt_pct(first['wtd_rate_change'])} to "
+                f"{_fmt_pct(last['wtd_rate_change'])} across {len(q)} quarters."
+            ),
+            "drill": "Show the quarterly weighted rate change trend and explain what's driving the momentum.",
+        })
+
+    order = {"watch": 0, "positive": 1, "info": 2}
+    findings.sort(key=lambda f: order.get(f["tone"], 3))
+    return findings
+
+
 def _loss_ratio_col(names: set[str]) -> str | None:
     """The loss-ratio column name varies by book (e.g. priced_loss_ratio vs
     loss_ratio); detect it from the live schema so cuts don't hard-fail."""
@@ -245,6 +355,7 @@ def dashboard_payload() -> dict[str, Any]:
             "table": tbl,
             "row_count": data_layer.get_schema()["row_count"],
             "headline": headline_row,
+            "briefing": _build_briefing(headline_row, cuts),
             "cuts": cuts,
         }
     )
