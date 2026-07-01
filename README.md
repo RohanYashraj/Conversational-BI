@@ -52,14 +52,6 @@ The server starts at `http://localhost:8000`.
 | `http://localhost:8000/docs` | Interactive API documentation |
 | `http://localhost:8000/config` | AgentOS configuration |
 
-### Connect to the control plane
-
-1. Open [os.agno.com](https://os.agno.com) and sign in
-2. Click **Add new OS** → **Local**
-3. Enter `http://localhost:8000` and connect
-4. Chat with the **KPI Commentary Tool** team
-
-Use Chrome or Edge for local connections ([connection FAQ](https://docs.agno.com/faq/agentos-connection)).
 
 ### First questions to try
 
