@@ -1,10 +1,12 @@
 'use client'
 
-import { FC, useState } from 'react'
+import { FC, ReactNode, useState } from 'react'
 
 import Image from 'next/image'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+
+import VegaLiteChart from './VegaLiteChart'
 
 import type {
   UnorderedListProps,
@@ -125,13 +127,44 @@ const HorizontalRule = ({ className, ...props }: HorizontalRuleProps) => (
   />
 )
 
-const InlineCode: FC<PreparedTextProps> = ({ children }) => {
+const flattenText = (node: ReactNode): string => {
+  if (node == null || node === false) return ''
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(flattenText).join('')
+  if (typeof node === 'object' && 'props' in node) {
+    return flattenText((node as { props: { children?: ReactNode } }).props.children)
+  }
+  return ''
+}
+
+const Code: FC<{ className?: string; children?: ReactNode }> = ({
+  className,
+  children,
+  ...props
+}) => {
+  const language = /language-([\w-]+)/.exec(className ?? '')?.[1]
+
+  // A ```vega-lite (or ```vega) fence is a chart spec — render it as a chart,
+  // never as raw JSON.
+  if (language === 'vega-lite' || language === 'vega') {
+    return <VegaLiteChart source={flattenText(children).trim()} />
+  }
+
   return (
-    <code className="relative whitespace-pre-wrap rounded-md border border-border/50 bg-muted px-1.5 py-0.5 font-dmmono text-[0.8125rem] text-foreground">
+    <code
+      className={cn(
+        className,
+        'relative whitespace-pre-wrap rounded-md border border-border/50 bg-muted px-1.5 py-0.5 font-dmmono text-[0.8125rem] text-foreground'
+      )}
+      {...filterProps(props)}
+    >
       {children}
     </code>
   )
 }
+
+// Unwrap the default <pre> so a rendered chart isn't nested inside it.
+const Pre: FC<PreparedTextProps> = ({ children }) => <>{children}</>
 
 const Blockquote = ({ className, ...props }: BlockquoteProps) => (
   <blockquote
@@ -275,7 +308,8 @@ export const components = {
   del: DeletedText,
   hr: HorizontalRule,
   blockquote: Blockquote,
-  code: InlineCode,
+  code: Code,
+  pre: Pre,
   a: AnchorLink,
   img: Img,
   p: Paragraph,

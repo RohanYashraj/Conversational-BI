@@ -111,7 +111,12 @@ def make_chart_spec(
     except json.JSONDecodeError as e:
         return f"Error parsing data: {e}"
 
-    mark = "line" if chart_type == "line" else "bar"
+    if not data:
+        return "NO_CHART"
+
+    mark = (chart_type or "").strip().lower()
+    if mark not in ("line", "bar"):
+        mark = "bar"
     encoding: dict[str, Any] = {
         "x": {"field": x_field, "type": "nominal" if mark == "bar" else "ordinal"},
         "y": {"field": y_field, "type": "quantitative"},
@@ -140,30 +145,36 @@ def default_dashboard() -> str:
     "the dashboard" / "the overview".
     """
     tbl = data_layer.config.TABLE_NAME
+    # The loss-ratio column name varies by book (e.g. priced_loss_ratio vs
+    # loss_ratio); detect it from the live schema so the cuts don't hard-fail.
+    names = {c["sql_name"] for c in data_layer.get_schema()["columns"]}
+    loss_col = next((c for c in ("priced_loss_ratio", "loss_ratio") if c in names), None)
+    loss_sel = f", AVG({loss_col}) AS avg_loss_ratio" if loss_col else ""
+
     cuts = {
         "by_segment": (
             f'SELECT segment, SUM(ren_gwp) AS premium, '
-            f'SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change, '
-            f'AVG(loss_ratio) AS avg_loss_ratio, COUNT(*) AS policies '
-            f'FROM {tbl} GROUP BY segment ORDER BY premium DESC'
+            f'SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change'
+            f'{loss_sel}, COUNT(*) AS policies '
+            f'FROM "{tbl}" GROUP BY segment ORDER BY premium DESC'
         ),
         "by_region": (
             f'SELECT region, SUM(ren_gwp) AS premium, '
-            f'SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change, '
-            f'AVG(loss_ratio) AS avg_loss_ratio FROM {tbl} GROUP BY region ORDER BY premium DESC'
+            f'SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change'
+            f'{loss_sel} FROM "{tbl}" GROUP BY region ORDER BY premium DESC'
         ),
         "by_underwriter": (
             f'SELECT underwriter, SUM(ren_gwp) AS premium, '
-            f'SUM(premium_change) AS premium_change FROM {tbl} '
+            f'SUM(premium_change) AS premium_change FROM "{tbl}" '
             f'GROUP BY underwriter ORDER BY premium DESC'
         ),
         "top_accounts": (
             f'SELECT account_name, SUM(ren_gwp) AS premium, COUNT(*) AS policies '
-            f'FROM {tbl} GROUP BY account_name ORDER BY premium DESC LIMIT 10'
+            f'FROM "{tbl}" GROUP BY account_name ORDER BY premium DESC LIMIT 10'
         ),
         "quarterly_trend": (
-            f'SELECT quarter, SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change, '
-            f'AVG(loss_ratio) AS avg_loss_ratio FROM {tbl} GROUP BY quarter ORDER BY quarter'
+            f'SELECT quarter, SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change'
+            f'{loss_sel} FROM "{tbl}" GROUP BY quarter ORDER BY quarter'
         ),
     }
     out = {name: data_layer.run_sql(sql).to_dict() for name, sql in cuts.items()}

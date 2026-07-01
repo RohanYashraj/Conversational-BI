@@ -37,6 +37,9 @@ def build_bi_team(*, db: SqliteDb) -> Team:
         session_state={"active_filters": {}, "audit_log": []},
         db=db,
         add_history_to_context=True,
-        enable_agentic_state=True,
+        # Filters are carried forward by our own get/set_active_filters tools
+        # plus conversation history — we don't need Agno's built-in agentic
+        # state tool, which also emits a noisy arg-parse warning at startup.
+        enable_agentic_state=False,
         markdown=True,
     )
