@@ -3,6 +3,7 @@ import { DM_Mono, Fraunces, Plus_Jakarta_Sans } from 'next/font/google'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
+import { Analytics } from "@vercel/analytics/next"
 
 const fontSans = Plus_Jakarta_Sans({
   variable: '--font-sans',
@@ -50,6 +51,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <NuqsAdapter>{children}</NuqsAdapter>
+        <Analytics />
         <Toaster />
       </body>
     </html>
