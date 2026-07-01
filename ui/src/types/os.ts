@@ -217,6 +217,25 @@ export interface ChatMessage {
   response_audio?: ResponseAudio
 }
 
+export interface DashboardCut {
+  columns: string[]
+  rows: Array<Record<string, string | number | null>>
+  error: string | null
+}
+
+export interface DashboardData {
+  table: string
+  row_count: number
+  headline: Record<string, number | null>
+  cuts: {
+    by_segment: DashboardCut
+    by_region: DashboardCut
+    by_underwriter: DashboardCut
+    top_accounts: DashboardCut
+    quarterly_trend: DashboardCut
+  }
+}
+
 export interface AgentDetails {
   id: string
   name?: string

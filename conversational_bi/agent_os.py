@@ -18,7 +18,7 @@ from agno.db.sqlite import SqliteDb
 from agno.os import AgentOS
 from fastapi import File, HTTPException, UploadFile
 
-from . import config, data_layer
+from . import config, data_layer, tools
 from .team import build_bi_team
 
 db = SqliteDb(db_file=config.SESSION_DB_PATH)
@@ -41,9 +41,18 @@ agent_os = AgentOS(
     db=db,
     tracing=True,
     lifespan=lifespan,
+    cors_allowed_origins=config.CORS_ORIGINS or None,
 )
 
 app = agent_os.get_app()
+
+
+@app.get("/dashboard")
+async def dashboard() -> dict:
+    """On-load portfolio overview: headline KPIs + the standard cuts, computed
+    from real SQL. The UI renders this immediately so the app opens on a live
+    dashboard the user can drill into via chat."""
+    return tools.dashboard_payload()
 
 
 @app.post("/datasets/upload")

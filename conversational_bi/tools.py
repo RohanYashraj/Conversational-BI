@@ -135,23 +135,41 @@ def make_chart_spec(
 
 
 # --------------------------------------------------------------------------
-# Default dashboard (on-load view, also callable as a tool)
+# Default dashboard (on-load view, callable as a tool AND served to the UI)
 # --------------------------------------------------------------------------
-def default_dashboard() -> str:
-    """Return the standard on-load dashboard cuts (the same views as today's
-    Summary tab): premium and weighted rate change by segment, by region, by
-    underwriter, top accounts by premium, and the quarterly trend. Returns JSON
-    with one block per cut. Call this when the user opens the tool or asks for
-    "the dashboard" / "the overview".
-    """
+def _json_safe(obj: Any) -> Any:
+    """Make a value strictly JSON-serialisable for the HTTP response: unwrap
+    numpy scalars and turn NaN/Infinity (invalid JSON that breaks the browser's
+    JSON.parse) into None."""
+    if hasattr(obj, "item") and not isinstance(obj, (str, bytes)):
+        try:
+            obj = obj.item()  # numpy scalar -> python scalar
+        except Exception:  # noqa: BLE001
+            pass
+    if isinstance(obj, float):
+        return None if (obj != obj or obj in (float("inf"), float("-inf"))) else obj
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    return obj
+
+
+def _loss_ratio_col(names: set[str]) -> str | None:
+    """The loss-ratio column name varies by book (e.g. priced_loss_ratio vs
+    loss_ratio); detect it from the live schema so cuts don't hard-fail."""
+    return next((c for c in ("priced_loss_ratio", "loss_ratio") if c in names), None)
+
+
+def _dashboard_cuts_sql() -> dict[str, str]:
+    """The standard on-load cuts, as {name: SQL}. Shared by the agent tool and
+    the /dashboard endpoint so both stay in sync."""
     tbl = data_layer.config.TABLE_NAME
-    # The loss-ratio column name varies by book (e.g. priced_loss_ratio vs
-    # loss_ratio); detect it from the live schema so the cuts don't hard-fail.
     names = {c["sql_name"] for c in data_layer.get_schema()["columns"]}
-    loss_col = next((c for c in ("priced_loss_ratio", "loss_ratio") if c in names), None)
+    loss_col = _loss_ratio_col(names)
     loss_sel = f", AVG({loss_col}) AS avg_loss_ratio" if loss_col else ""
 
-    cuts = {
+    return {
         "by_segment": (
             f'SELECT segment, SUM(ren_gwp) AS premium, '
             f'SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change'
@@ -177,5 +195,56 @@ def default_dashboard() -> str:
             f'{loss_sel} FROM "{tbl}" GROUP BY quarter ORDER BY quarter'
         ),
     }
-    out = {name: data_layer.run_sql(sql).to_dict() for name, sql in cuts.items()}
+
+
+def default_dashboard() -> str:
+    """Return the standard on-load dashboard cuts (the same views as today's
+    Summary tab): premium and weighted rate change by segment, by region, by
+    underwriter, top accounts by premium, and the quarterly trend. Returns JSON
+    with one block per cut. Call this when the user opens the tool or asks for
+    "the dashboard" / "the overview".
+    """
+    out = {name: data_layer.run_sql(sql).to_dict() for name, sql in _dashboard_cuts_sql().items()}
     return json.dumps(out, indent=2, default=str)
+
+
+def dashboard_payload() -> dict[str, Any]:
+    """Clean, UI-ready dashboard: headline KPIs plus the standard cuts as
+    {columns, rows}. Served on load by the /dashboard endpoint so the app opens
+    on a live portfolio view (not a blank chat). Every figure is real SQL."""
+    tbl = data_layer.config.TABLE_NAME
+    names = {c["sql_name"] for c in data_layer.get_schema()["columns"]}
+    loss_col = _loss_ratio_col(names)
+
+    # Headline KPIs — include only the ones the live schema supports.
+    parts = [
+        "SUM(ren_gwp) AS total_gwp",
+        "SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change",
+        "COUNT(*) AS policy_count",
+    ]
+    if loss_col:
+        parts.append(f"AVG({loss_col}) AS avg_loss_ratio")
+    if "new_or_renewal" in names:
+        # Renewal premium retention: renewed GWP over the premium up for renewal.
+        # Books code renewals as "Renewal" or "R", so match on the leading "r".
+        parts.append(
+            "SUM(CASE WHEN lower(new_or_renewal) LIKE 'r%' THEN ren_gwp END)"
+            "/NULLIF(SUM(CASE WHEN lower(new_or_renewal) LIKE 'r%' THEN expiry_gwp END),0)"
+            " AS retention"
+        )
+    headline = data_layer.run_sql(f'SELECT {", ".join(parts)} FROM "{tbl}"')
+    headline_row = headline.rows[0] if headline.rows else {}
+
+    cuts: dict[str, Any] = {}
+    for name, sql in _dashboard_cuts_sql().items():
+        res = data_layer.run_sql(sql)
+        cuts[name] = {"columns": res.columns, "rows": res.rows, "error": res.error}
+
+    return _json_safe(
+        {
+            "table": tbl,
+            "row_count": data_layer.get_schema()["row_count"],
+            "headline": headline_row,
+            "cuts": cuts,
+        }
+    )
