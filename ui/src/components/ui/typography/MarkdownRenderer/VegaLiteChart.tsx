@@ -7,6 +7,9 @@ import { useTheme } from 'next-themes'
 interface VegaLiteChartProps {
   /** Raw text of the ```vega-lite fenced block (a Vega-Lite JSON spec). */
   source: string
+  /** Fill the container (dashboard cards) instead of the ~560px cap used for
+   * inline chat charts. */
+  fullWidth?: boolean
 }
 
 /**
@@ -16,7 +19,7 @@ interface VegaLiteChartProps {
  * streaming the JSON can be incomplete — we show a light placeholder until it
  * parses cleanly.
  */
-const VegaLiteChart = ({ source }: VegaLiteChartProps) => {
+const VegaLiteChart = ({ source, fullWidth = false }: VegaLiteChartProps) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const { resolvedTheme } = useTheme()
   const [failed, setFailed] = useState(false)
@@ -39,7 +42,9 @@ const VegaLiteChart = ({ source }: VegaLiteChartProps) => {
         if (cancelled || !containerRef.current) return
         // Make the chart fill the container width unless the spec is explicit.
         const responsiveSpec =
-          spec && spec.width === undefined ? { ...spec, width: 'container' } : spec
+          spec && spec.width === undefined
+            ? { ...spec, width: 'container' }
+            : spec
         return embed(containerRef.current, responsiveSpec as never, {
           actions: false,
           renderer: 'svg',
@@ -77,7 +82,11 @@ const VegaLiteChart = ({ source }: VegaLiteChartProps) => {
   }
 
   return (
-    <div className="my-2 w-full max-w-[560px] overflow-x-auto rounded-md border border-border bg-background p-3">
+    <div
+      className={`my-2 w-full overflow-x-auto rounded-md border border-border bg-background p-3 ${
+        fullWidth ? '' : 'max-w-[560px]'
+      }`}
+    >
       <div ref={containerRef} className="w-full" />
     </div>
   )

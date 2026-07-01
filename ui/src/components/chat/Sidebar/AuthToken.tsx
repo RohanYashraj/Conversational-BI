@@ -109,7 +109,9 @@ const AuthToken = ({
             tabIndex={0}
             aria-label="Edit authentication token"
             transition={
-              reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 10 }
+              reduceMotion
+                ? { duration: 0 }
+                : { type: 'spring', stiffness: 400, damping: 10 }
             }
           >
             <AnimatePresence mode="wait">
@@ -123,7 +125,8 @@ const AuthToken = ({
                   transition={{ duration: reduceMotion ? 0 : 0.2 }}
                 >
                   <p className="flex items-center gap-2 whitespace-nowrap text-xs font-medium text-primary">
-                    <Icon type="edit" size="xxs" aria-hidden="true" /> EDIT TOKEN
+                    <Icon type="edit" size="xxs" aria-hidden="true" /> EDIT
+                    TOKEN
                   </p>
                 </motion.div>
               ) : (

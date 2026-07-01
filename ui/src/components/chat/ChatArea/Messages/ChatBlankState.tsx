@@ -1,7 +1,12 @@
 'use client'
 
+import { useState } from 'react'
+
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
+import { ChevronDown, LayoutDashboard } from 'lucide-react'
+
+import DashboardOverview from './DashboardOverview'
 
 const NodesMotif = () => (
   <svg
@@ -24,41 +29,34 @@ const NodesMotif = () => (
 
 const ChatBlankState = () => {
   const reduceMotion = useReducedMotion()
+  const [showDashboard, setShowDashboard] = useState(false)
 
   return (
     <section
-      className="flex flex-col items-center px-2 text-center font-sans"
+      className="flex w-full flex-col items-center px-2 font-sans"
       aria-label="Welcome message"
     >
-      <div className="flex w-full max-w-xl flex-col items-center gap-y-8">
+      <div className="flex w-full max-w-xl flex-col items-center gap-y-4 text-center">
         <motion.div
           initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
             duration: reduceMotion ? 0 : 0.45,
-            delay: reduceMotion ? 0 : 0.15
+            delay: reduceMotion ? 0 : 0.1
           }}
+          className="flex items-center gap-3"
         >
           <Image
             src="/images/logo.png"
             alt="Accenture"
-            width={64}
-            height={64}
-            className="mx-auto size-16 object-contain"
+            width={40}
+            height={40}
+            className="size-10 object-contain"
             priority
           />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: reduceMotion ? 0 : 0.45,
-            delay: reduceMotion ? 0 : 0.22
-          }}
-          className="inline-flex items-center rounded-full bg-gradient-to-r from-brand-badgeFrom to-brand-badgeTo px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-primary-foreground shadow-sm"
-        >
-          KPI Commentary Tool
+          <span className="inline-flex items-center rounded-full bg-gradient-to-r from-brand-badgeFrom to-brand-badgeTo px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-primary-foreground shadow-sm">
+            KPI Commentary Tool
+          </span>
         </motion.div>
 
         <motion.h1
@@ -66,9 +64,9 @@ const ChatBlankState = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{
             duration: reduceMotion ? 0 : 0.5,
-            delay: reduceMotion ? 0 : 0.28
+            delay: reduceMotion ? 0 : 0.2
           }}
-          className="font-display text-pretty text-balance text-3xl font-semibold leading-snug tracking-tight text-foreground sm:text-4xl"
+          className="text-balance text-pretty font-display text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-3xl"
         >
           Ask questions about your portfolio data
         </motion.h1>
@@ -78,27 +76,47 @@ const ChatBlankState = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{
             duration: reduceMotion ? 0 : 0.45,
-            delay: reduceMotion ? 0 : 0.38
+            delay: reduceMotion ? 0 : 0.3
           }}
           className="max-w-md text-sm leading-relaxed text-muted-foreground"
         >
           Get grounded answers, charts, and commentary from your book of
-          business. Attach a spreadsheet to explore a new dataset, or upload
-          documents for additional context.
+          business. Ask a question below, or open the portfolio overview.
         </motion.p>
 
-        <motion.div
-          initial={{ opacity: reduceMotion ? 1 : 0 }}
-          animate={{ opacity: 1 }}
-          transition={{
-            duration: reduceMotion ? 0 : 0.6,
-            delay: reduceMotion ? 0 : 0.5
-          }}
-          className="pt-2"
+        <button
+          type="button"
+          onClick={() => setShowDashboard((prev) => !prev)}
+          aria-expanded={showDashboard}
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
         >
-          <NodesMotif />
-        </motion.div>
+          <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+          {showDashboard ? 'Hide dashboard' : 'Show dashboard'}
+          <ChevronDown
+            className={`h-3.5 w-3.5 transition-transform ${
+              showDashboard ? '' : '-rotate-90'
+            }`}
+            aria-hidden="true"
+          />
+        </button>
+
+        {!showDashboard && (
+          <div className="pt-1">
+            <NodesMotif />
+          </div>
+        )}
       </div>
+
+      {showDashboard && (
+        <motion.div
+          initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.4 }}
+          className="mt-6 w-full"
+        >
+          <DashboardOverview />
+        </motion.div>
+      )}
     </section>
   )
 }

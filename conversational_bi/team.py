@@ -10,14 +10,23 @@ from __future__ import annotations
 from agno.db.sqlite import SqliteDb
 from agno.team import Team
 from agno.team.mode import TeamMode
+from agno.tools.reasoning import ReasoningTools
 
 from . import config, prompts
 from .agents import build_insight_agent, build_query_agent, build_viz_agent
-from .tools import default_dashboard, get_active_filters, set_active_filters
+from .tools import default_dashboard, get_active_filters, premium_bridge, set_active_filters
 
 
 def build_bi_team(*, db: SqliteDb) -> Team:
     """Construct the orchestrator team registered with AgentOS."""
+    # Leader tools. With reasoning on, ReasoningTools lets the orchestrator
+    # think in visible steps (streamed to the UI) before/while it delegates —
+    # our own Gemini model drives it, so it stays model-agnostic and inside
+    # the AgentOS framework.
+    leader_tools = [get_active_filters, set_active_filters, default_dashboard, premium_bridge]
+    if config.REASONING_ENABLED:
+        leader_tools.insert(0, ReasoningTools(add_instructions=True))
+
     return Team(
         id="conversational-bi",
         name="KPI Commentary Tool",
@@ -32,7 +41,7 @@ def build_bi_team(*, db: SqliteDb) -> Team:
             build_insight_agent(),
         ],
         mode=TeamMode.coordinate,
-        tools=[get_active_filters, set_active_filters, default_dashboard],
+        tools=leader_tools,
         instructions=prompts.ORCHESTRATOR,
         session_state={"active_filters": {}, "audit_log": []},
         db=db,

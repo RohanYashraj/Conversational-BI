@@ -12,6 +12,7 @@ export const APIRoutes = {
   Config: (agentOSUrl: string) => `${agentOSUrl}/config`,
   Status: (agentOSUrl: string) => `${agentOSUrl}/health`,
   DatasetUpload: (agentOSUrl: string) => `${agentOSUrl}/datasets/upload`,
+  Dashboard: (agentOSUrl: string) => `${agentOSUrl}/dashboard`,
   Metrics: (agentOSUrl: string) => `${agentOSUrl}/metrics`,
   MetricsRefresh: (agentOSUrl: string) => `${agentOSUrl}/metrics/refresh`,
   Models: (agentOSUrl: string) => `${agentOSUrl}/models`,
@@ -129,8 +130,7 @@ export const APIRoutes = {
     agentOSUrl: string,
     componentId: string,
     version: string
-  ) =>
-    `${agentOSUrl}/components/${enc(componentId)}/configs/${enc(version)}`,
+  ) => `${agentOSUrl}/components/${enc(componentId)}/configs/${enc(version)}`,
   SetCurrentComponentConfig: (
     agentOSUrl: string,
     componentId: string,
@@ -150,11 +150,7 @@ export const APIRoutes = {
     `${agentOSUrl}/schedules/${enc(scheduleId)}/trigger`,
   ScheduleRuns: (agentOSUrl: string, scheduleId: string) =>
     `${agentOSUrl}/schedules/${enc(scheduleId)}/runs`,
-  ScheduleRunById: (
-    agentOSUrl: string,
-    scheduleId: string,
-    runId: string
-  ) =>
+  ScheduleRunById: (agentOSUrl: string, scheduleId: string, runId: string) =>
     `${agentOSUrl}/schedules/${enc(scheduleId)}/runs/${enc(runId)}`,
 
   /** Evaluations */

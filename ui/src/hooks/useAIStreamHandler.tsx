@@ -8,9 +8,29 @@ import { useStore } from '../store'
 import { RunEvent, RunResponseContent, type RunResponse } from '@/types/os'
 import { constructEndpointUrl } from '@/lib/constructEndpointUrl'
 import useAIResponseStream from './useAIResponseStream'
-import { ToolCall } from '@/types/os'
+import { ToolCall, type ReasoningSteps } from '@/types/os'
 import { useQueryState } from 'nuqs'
 import { getJsonMarkdown } from '@/lib/utils'
+
+/**
+ * Agno 2.6 streams reasoning steps in the event's `content` (a single step
+ * object on ReasoningStep, an array on ReasoningCompleted), while older builds
+ * used `extra_data.reasoning_steps`. Normalise both into a step array so the
+ * "Thinking" panel works regardless of the backend's exact schema.
+ */
+const extractReasoningSteps = (chunk: RunResponse): ReasoningSteps[] => {
+  if (chunk.extra_data?.reasoning_steps?.length) {
+    return chunk.extra_data.reasoning_steps
+  }
+  const content = chunk.content
+  if (Array.isArray(content)) {
+    return content as ReasoningSteps[]
+  }
+  if (content && typeof content === 'object' && 'title' in content) {
+    return [content as ReasoningSteps]
+  }
+  return []
+}
 import {
   augmentMessageWithSchema,
   isContextFile,
@@ -332,10 +352,12 @@ const useAIChatStreamHandler = () => {
                 if (lastMessage && lastMessage.role === 'agent') {
                   const existingSteps =
                     lastMessage.extra_data?.reasoning_steps ?? []
-                  const incomingSteps = chunk.extra_data?.reasoning_steps ?? []
-                  lastMessage.extra_data = {
-                    ...lastMessage.extra_data,
-                    reasoning_steps: [...existingSteps, ...incomingSteps]
+                  const incomingSteps = extractReasoningSteps(chunk)
+                  if (incomingSteps.length > 0) {
+                    lastMessage.extra_data = {
+                      ...lastMessage.extra_data,
+                      reasoning_steps: [...existingSteps, ...incomingSteps]
+                    }
                   }
                 }
                 return newMessages
@@ -348,10 +370,13 @@ const useAIChatStreamHandler = () => {
                 const newMessages = [...prevMessages]
                 const lastMessage = newMessages[newMessages.length - 1]
                 if (lastMessage && lastMessage.role === 'agent') {
-                  if (chunk.extra_data?.reasoning_steps) {
+                  // The completed event carries the authoritative full list;
+                  // replace the incrementally-appended steps with it.
+                  const fullSteps = extractReasoningSteps(chunk)
+                  if (fullSteps.length > 0) {
                     lastMessage.extra_data = {
                       ...lastMessage.extra_data,
-                      reasoning_steps: chunk.extra_data.reasoning_steps
+                      reasoning_steps: fullSteps
                     }
                   }
                 }

@@ -40,8 +40,31 @@ def gemini_model() -> Gemini:
     return Gemini(id=GEMINI_MODEL, api_key=api_key)
 
 
+# --- Reasoning / "thinking mode" -------------------------------------------
+# When on, the orchestrator uses Agno's ReasoningTools to think through the
+# problem in visible steps (streamed to the UI as a collapsible "Thinking"
+# panel). It adds model round-trips, so it is a config toggle.
+REASONING_ENABLED = os.getenv("BI_REASONING", "true").lower() == "true"
+
+
 # --- AgentOS / sessions ----------------------------------------------------
 SESSION_DB_PATH = os.getenv("BI_SESSION_DB", str(BASE_DIR.parent / "bi_sessions.db"))
+# Extra browser origins allowed to call the API. The bundled UI at
+# localhost:3000 (and the Agno domains) are ALWAYS allowed — AgentOS *replaces*
+# its defaults when given an explicit list, so we merge the defaults back in to
+# avoid locking out the UI. Set BI_CORS_ORIGINS (comma-separated) only to add
+# extra origins when serving the UI from another host/port.
+_DEFAULT_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "https://agno.com",
+    "https://www.agno.com",
+    "https://app.agno.com",
+    "https://os.agno.com",
+    "https://os-stg.agno.com",
+]
+_extra_cors = [o.strip() for o in os.getenv("BI_CORS_ORIGINS", "").split(",") if o.strip()]
+# Empty (falsy) when no extras are set, so AgentOS keeps its own defaults.
+CORS_ORIGINS = (_DEFAULT_CORS_ORIGINS + _extra_cors) if _extra_cors else []
 AGENT_OS_HOST = os.getenv("AGENT_OS_HOST", "localhost")
 AGENT_OS_PORT = int(os.getenv("AGENT_OS_PORT", "8000"))
 AGENT_OS_RELOAD = os.getenv("AGENT_OS_RELOAD", "false").lower() == "true"

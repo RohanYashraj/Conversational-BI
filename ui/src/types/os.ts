@@ -217,6 +217,43 @@ export interface ChatMessage {
   response_audio?: ResponseAudio
 }
 
+export interface DashboardCut {
+  columns: string[]
+  rows: Array<Record<string, string | number | null>>
+  error: string | null
+}
+
+export interface BriefingItem {
+  id: string
+  tone: 'watch' | 'positive' | 'info'
+  title: string
+  detail: string
+  drill: string
+}
+
+export interface PremiumBridge {
+  error: string | null
+  scope?: string
+  summary?: string
+  spec?: Record<string, unknown> | null
+  components?: Array<Record<string, string | number | null>>
+}
+
+export interface DashboardData {
+  table: string
+  row_count: number
+  headline: Record<string, number | null>
+  briefing: BriefingItem[]
+  premium_bridge: PremiumBridge
+  cuts: {
+    by_segment: DashboardCut
+    by_region: DashboardCut
+    by_underwriter: DashboardCut
+    top_accounts: DashboardCut
+    quarterly_trend: DashboardCut
+  }
+}
+
 export interface AgentDetails {
   id: string
   name?: string

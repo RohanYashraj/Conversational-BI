@@ -59,12 +59,7 @@ export default {
         card: 'hsl(var(--card))'
       },
       fontFamily: {
-        sans: [
-          'var(--font-sans)',
-          'ui-sans-serif',
-          'system-ui',
-          'sans-serif'
-        ],
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'ui-serif', 'Georgia', 'serif'],
         dmmono: ['var(--font-dm-mono)', 'ui-monospace', 'monospace']
       },

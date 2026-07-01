@@ -135,23 +135,286 @@ def make_chart_spec(
 
 
 # --------------------------------------------------------------------------
-# Default dashboard (on-load view, also callable as a tool)
+# Default dashboard (on-load view, callable as a tool AND served to the UI)
 # --------------------------------------------------------------------------
-def default_dashboard() -> str:
-    """Return the standard on-load dashboard cuts (the same views as today's
-    Summary tab): premium and weighted rate change by segment, by region, by
-    underwriter, top accounts by premium, and the quarterly trend. Returns JSON
-    with one block per cut. Call this when the user opens the tool or asks for
-    "the dashboard" / "the overview".
-    """
+def _json_safe(obj: Any) -> Any:
+    """Make a value strictly JSON-serialisable for the HTTP response: unwrap
+    numpy scalars and turn NaN/Infinity (invalid JSON that breaks the browser's
+    JSON.parse) into None."""
+    if hasattr(obj, "item") and not isinstance(obj, (str, bytes)):
+        try:
+            obj = obj.item()  # numpy scalar -> python scalar
+        except Exception:  # noqa: BLE001
+            pass
+    if isinstance(obj, float):
+        return None if (obj != obj or obj in (float("inf"), float("-inf"))) else obj
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    return obj
+
+
+def _fmt_pct(v: Any) -> str:
+    return f"{v * 100:.1f}%" if isinstance(v, (int, float)) else "n/a"
+
+
+def _fmt_money(v: Any) -> str:
+    if not isinstance(v, (int, float)):
+        return "n/a"
+    a = abs(v)
+    if a >= 1_000_000:
+        return f"${v / 1_000_000:.2f}M"
+    if a >= 1_000:
+        return f"${v / 1_000:.1f}K"
+    return f"${v:.0f}"
+
+
+def _build_briefing(headline: dict[str, Any], cuts: dict[str, Any]) -> list[dict[str, Any]]:
+    """Derive the 2-4 most notable, decision-useful movements from the already
+    computed cuts — softest pricing, margin risk, concentration, rate momentum.
+    Every figure is a real computed number; each finding drills into full
+    commentary when clicked. No LLM here, so the landing view is instant and
+    can't hallucinate."""
+    findings: list[dict[str, Any]] = []
+    book_lr = headline.get("avg_loss_ratio")
+    total = headline.get("total_gwp")
+    segs = cuts.get("by_segment", {}).get("rows", [])
+
+    # 1) Softest pricing segment.
+    rated = [r for r in segs if isinstance(r.get("wtd_rate_change"), (int, float))]
+    if rated:
+        s = min(rated, key=lambda r: r["wtd_rate_change"])
+        lr = s.get("avg_loss_ratio")
+        detail = f"Weighted rate change is {_fmt_pct(s['wtd_rate_change'])}, the softest of {len(rated)} segments"
+        if isinstance(lr, (int, float)) and isinstance(book_lr, (int, float)):
+            rel = "below" if lr < book_lr else "above"
+            detail += f", on a {_fmt_pct(lr)} loss ratio ({rel} the {_fmt_pct(book_lr)} book average)."
+        else:
+            detail += "."
+        findings.append({
+            "id": "softest",
+            "tone": "watch" if s["wtd_rate_change"] < 0 else "info",
+            "title": f"Softest pricing — {s['segment']}",
+            "detail": detail,
+            "drill": (
+                f"Why is {s['segment']} the softest segment on rate? Break down its "
+                "weighted rate change, loss ratio and new-vs-renewal mix, and explain the driver."
+            ),
+        })
+
+    # 2) Highest loss ratio segment (margin watch).
+    lrs = [r for r in segs if isinstance(r.get("avg_loss_ratio"), (int, float))]
+    if lrs and isinstance(book_lr, (int, float)):
+        s = max(lrs, key=lambda r: r["avg_loss_ratio"])
+        delta = s["avg_loss_ratio"] - book_lr
+        findings.append({
+            "id": "loss",
+            "tone": "watch" if delta > 0.03 else "info",
+            "title": f"Highest loss ratio — {s['segment']}",
+            "detail": (
+                f"Loss ratio is {_fmt_pct(s['avg_loss_ratio'])}, {_fmt_pct(delta)} above the "
+                f"{_fmt_pct(book_lr)} book average, on {_fmt_money(s.get('premium'))} of premium."
+            ),
+            "drill": (
+                f"Break down {s['segment']}: loss ratio, rate change and premium — "
+                "what is driving the loss ratio?"
+            ),
+        })
+
+    # 3) Account concentration.
+    accts = cuts.get("top_accounts", {}).get("rows", [])
+    if accts and isinstance(total, (int, float)) and total:
+        top1 = accts[0]
+        top1_share = (top1.get("premium") or 0) / total
+        topn = sum((a.get("premium") or 0) for a in accts) / total
+        findings.append({
+            "id": "concentration",
+            "tone": "watch" if top1_share > 0.10 else "info",
+            "title": "Account concentration",
+            "detail": (
+                f"The largest account ({top1.get('account_name')}) is {_fmt_pct(top1_share)} of GWP; "
+                f"the top {len(accts)} are {_fmt_pct(topn)}."
+            ),
+            "drill": (
+                "Show the top accounts by premium and assess how concentrated the book is — "
+                "what share sits in the largest names?"
+            ),
+        })
+
+    # 4) Rate momentum over the quarters.
+    q = [r for r in cuts.get("quarterly_trend", {}).get("rows", [])
+         if isinstance(r.get("wtd_rate_change"), (int, float))]
+    if len(q) >= 2:
+        first, last = q[0], q[-1]
+        d = last["wtd_rate_change"] - first["wtd_rate_change"]
+        tone, word = ("watch", "cooled") if d < -0.01 else ("positive", "firmed") if d > 0.01 else ("info", "held steady")
+        findings.append({
+            "id": "momentum",
+            "tone": tone,
+            "title": "Rate momentum",
+            "detail": (
+                f"Weighted rate change {word} from {_fmt_pct(first['wtd_rate_change'])} to "
+                f"{_fmt_pct(last['wtd_rate_change'])} across {len(q)} quarters."
+            ),
+            "drill": "Show the quarterly weighted rate change trend and explain what's driving the momentum.",
+        })
+
+    order = {"watch": 0, "positive": 1, "info": 2}
+    findings.sort(key=lambda f: order.get(f["tone"], 3))
+    return findings
+
+
+def _signed_money(amount: float, kind: str) -> str:
+    if kind == "total":
+        return _fmt_money(amount)
+    sign = "+" if amount >= 0 else "−"
+    return f"{sign}{_fmt_money(abs(amount))}"
+
+
+_BRIDGE_COLS = ("expiry_gwp", "expiry_adjuted_gwp", "ren_gwp")
+
+
+def _premium_bridge(segment: str = "", region: str = "") -> dict[str, Any]:
+    """Decompose the renewal premium walk — Expiring → Exposure/Other → Rate →
+    Renewed (+ New business when present) — into an exact, additive bridge with a
+    ready-to-render Vega-Lite waterfall. Uses expiry_gwp, expiry_adjuted_gwp and
+    ren_gwp so the components tie out to the penny."""
     tbl = data_layer.config.TABLE_NAME
-    # The loss-ratio column name varies by book (e.g. priced_loss_ratio vs
-    # loss_ratio); detect it from the live schema so the cuts don't hard-fail.
     names = {c["sql_name"] for c in data_layer.get_schema()["columns"]}
-    loss_col = next((c for c in ("priced_loss_ratio", "loss_ratio") if c in names), None)
+    if not set(_BRIDGE_COLS) <= names:
+        return {"error": "This book lacks the expiring/adjusted/renewed premium columns needed for a bridge.",
+                "components": [], "spec": None}
+
+    def esc(v: str) -> str:
+        return v.replace("'", "''")
+
+    filters: list[str] = []
+    scope: list[str] = []
+    if "new_or_renewal" in names:
+        filters.append("lower(new_or_renewal) LIKE 'r%'")
+    if segment and "segment" in names:
+        filters.append(f"segment = '{esc(segment)}'")
+        scope.append(segment)
+    if region and "region" in names:
+        filters.append(f"region = '{esc(region)}'")
+        scope.append(region)
+    where = " AND ".join(filters) if filters else "1=1"
+
+    res = data_layer.run_sql(
+        f'SELECT SUM(expiry_gwp) AS expiring, '
+        f'SUM(expiry_adjuted_gwp)-SUM(expiry_gwp) AS exposure, '
+        f'SUM(ren_gwp)-SUM(expiry_adjuted_gwp) AS rate, '
+        f'SUM(ren_gwp) AS renewed FROM "{tbl}" WHERE {where}'
+    )
+    if res.error or not res.rows or not isinstance(res.rows[0].get("expiring"), (int, float)):
+        return {"error": res.error or "No renewal premium found for that slice.",
+                "components": [], "spec": None}
+    r = res.rows[0]
+    expiring, exposure, rate, renewed = (
+        float(r["expiring"]), float(r["exposure"]), float(r["rate"]), float(r["renewed"])
+    )
+
+    # Optional new-business leg (books that carry new alongside renewals).
+    new_biz = 0.0
+    if "new_or_renewal" in names:
+        nb_filters = ["lower(new_or_renewal) NOT LIKE 'r%'"]
+        if segment and "segment" in names:
+            nb_filters.append(f"segment = '{esc(segment)}'")
+        if region and "region" in names:
+            nb_filters.append(f"region = '{esc(region)}'")
+        nb = data_layer.run_sql(
+            f'SELECT SUM(ren_gwp) AS nb FROM "{tbl}" WHERE {" AND ".join(nb_filters)}'
+        )
+        nb_val = nb.rows[0].get("nb") if nb.rows else None
+        # SUM over zero rows is NULL/NaN; treat that as no new business.
+        if isinstance(nb_val, (int, float)) and nb_val == nb_val:
+            new_biz = float(nb_val)
+
+    steps = [("Expiring", expiring, "total"), ("Exposure", exposure, "delta"),
+             ("Rate", rate, "delta"), ("Renewed", renewed, "total")]
+    if new_biz:
+        steps += [("New business", new_biz, "delta"), ("Total written", renewed + new_biz, "total")]
+
+    values: list[dict[str, Any]] = []
+    running = 0.0
+    for i, (label, amount, typ) in enumerate(steps):
+        if typ == "total":
+            start, end, running = 0.0, amount, amount
+            kind = "total"
+        else:
+            start, end, running = running, running + amount, running + amount
+            kind = "increase" if amount >= 0 else "decrease"
+        values.append({
+            "label": label, "order": i, "kind": kind,
+            "start": round(start, 2), "end": round(end, 2),
+            "amount": round(amount, 2), "amount_label": _signed_money(amount, typ),
+        })
+
+    scope_txt = " / ".join(scope) if scope else "Portfolio"
+    spec = {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "title": f"Premium Bridge — {scope_txt}",
+        "data": {"values": values},
+        "encoding": {
+            "x": {"field": "label", "type": "nominal", "sort": {"field": "order"},
+                  "axis": {"labelAngle": 0, "title": None}},
+        },
+        "layer": [
+            {"mark": {"type": "bar", "size": 42},
+             "encoding": {
+                 "y": {"field": "start", "type": "quantitative", "title": "GWP"},
+                 "y2": {"field": "end"},
+                 "color": {"field": "kind", "type": "nominal",
+                           "scale": {"domain": ["total", "increase", "decrease"],
+                                     "range": ["#6b7280", "#10b981", "#ef4444"]},
+                           "legend": None}}},
+            {"mark": {"type": "text", "dy": -6, "fontSize": 10},
+             "encoding": {"y": {"field": "end", "type": "quantitative"},
+                          "text": {"field": "amount_label"}}},
+        ],
+    }
+    summary = (
+        f"Renewal premium walked from {_fmt_money(expiring)} expiring to "
+        f"{_fmt_money(renewed)} renewed ({scope_txt}): rate added {_signed_money(rate, 'delta')}, "
+        f"exposure/other {_signed_money(exposure, 'delta')}."
+    )
+    return {"error": None, "scope": scope_txt, "components": values, "spec": spec,
+            "summary": summary, "expiring": expiring, "exposure": exposure,
+            "rate": rate, "renewed": renewed, "new_business": new_biz}
+
+
+def premium_bridge(segment: str = "", region: str = "") -> str:
+    """Show the premium bridge (a renewal premium walk) as a waterfall: how the
+    book moved from expiring premium to renewed premium via exposure/other change
+    and rate change (plus new business when the book has it).
+
+    Args:
+        segment: optional segment to scope the bridge to (exact schema value).
+        region: optional region to scope the bridge to (exact schema value).
+
+    Returns JSON with `summary`, `components` (each leg's dollar amount) and a
+    ready Vega-Lite `spec`. Present the components as a short table, embed the
+    `spec` verbatim in a ```vega-lite fence, and add one line on the drivers.
+    """
+    return json.dumps(_premium_bridge(segment=segment, region=region), default=str)
+
+
+def _loss_ratio_col(names: set[str]) -> str | None:
+    """The loss-ratio column name varies by book (e.g. priced_loss_ratio vs
+    loss_ratio); detect it from the live schema so cuts don't hard-fail."""
+    return next((c for c in ("priced_loss_ratio", "loss_ratio") if c in names), None)
+
+
+def _dashboard_cuts_sql() -> dict[str, str]:
+    """The standard on-load cuts, as {name: SQL}. Shared by the agent tool and
+    the /dashboard endpoint so both stay in sync."""
+    tbl = data_layer.config.TABLE_NAME
+    names = {c["sql_name"] for c in data_layer.get_schema()["columns"]}
+    loss_col = _loss_ratio_col(names)
     loss_sel = f", AVG({loss_col}) AS avg_loss_ratio" if loss_col else ""
 
-    cuts = {
+    return {
         "by_segment": (
             f'SELECT segment, SUM(ren_gwp) AS premium, '
             f'SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change'
@@ -177,5 +440,58 @@ def default_dashboard() -> str:
             f'{loss_sel} FROM "{tbl}" GROUP BY quarter ORDER BY quarter'
         ),
     }
-    out = {name: data_layer.run_sql(sql).to_dict() for name, sql in cuts.items()}
+
+
+def default_dashboard() -> str:
+    """Return the standard on-load dashboard cuts (the same views as today's
+    Summary tab): premium and weighted rate change by segment, by region, by
+    underwriter, top accounts by premium, and the quarterly trend. Returns JSON
+    with one block per cut. Call this when the user opens the tool or asks for
+    "the dashboard" / "the overview".
+    """
+    out = {name: data_layer.run_sql(sql).to_dict() for name, sql in _dashboard_cuts_sql().items()}
     return json.dumps(out, indent=2, default=str)
+
+
+def dashboard_payload() -> dict[str, Any]:
+    """Clean, UI-ready dashboard: headline KPIs plus the standard cuts as
+    {columns, rows}. Served on load by the /dashboard endpoint so the app opens
+    on a live portfolio view (not a blank chat). Every figure is real SQL."""
+    tbl = data_layer.config.TABLE_NAME
+    names = {c["sql_name"] for c in data_layer.get_schema()["columns"]}
+    loss_col = _loss_ratio_col(names)
+
+    # Headline KPIs — include only the ones the live schema supports.
+    parts = [
+        "SUM(ren_gwp) AS total_gwp",
+        "SUM(rate_change*expiry_gwp)/NULLIF(SUM(expiry_gwp),0) AS wtd_rate_change",
+        "COUNT(*) AS policy_count",
+    ]
+    if loss_col:
+        parts.append(f"AVG({loss_col}) AS avg_loss_ratio")
+    if "new_or_renewal" in names:
+        # Renewal premium retention: renewed GWP over the premium up for renewal.
+        # Books code renewals as "Renewal" or "R", so match on the leading "r".
+        parts.append(
+            "SUM(CASE WHEN lower(new_or_renewal) LIKE 'r%' THEN ren_gwp END)"
+            "/NULLIF(SUM(CASE WHEN lower(new_or_renewal) LIKE 'r%' THEN expiry_gwp END),0)"
+            " AS retention"
+        )
+    headline = data_layer.run_sql(f'SELECT {", ".join(parts)} FROM "{tbl}"')
+    headline_row = headline.rows[0] if headline.rows else {}
+
+    cuts: dict[str, Any] = {}
+    for name, sql in _dashboard_cuts_sql().items():
+        res = data_layer.run_sql(sql)
+        cuts[name] = {"columns": res.columns, "rows": res.rows, "error": res.error}
+
+    return _json_safe(
+        {
+            "table": tbl,
+            "row_count": data_layer.get_schema()["row_count"],
+            "headline": headline_row,
+            "briefing": _build_briefing(headline_row, cuts),
+            "premium_bridge": _premium_bridge(),
+            "cuts": cuts,
+        }
+    )

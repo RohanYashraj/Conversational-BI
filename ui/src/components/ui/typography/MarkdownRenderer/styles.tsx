@@ -132,7 +132,9 @@ const flattenText = (node: ReactNode): string => {
   if (typeof node === 'string' || typeof node === 'number') return String(node)
   if (Array.isArray(node)) return node.map(flattenText).join('')
   if (typeof node === 'object' && 'props' in node) {
-    return flattenText((node as { props: { children?: ReactNode } }).props.children)
+    return flattenText(
+      (node as { props: { children?: ReactNode } }).props.children
+    )
   }
   return ''
 }
@@ -218,7 +220,7 @@ const Heading6 = ({ className, ...props }: HeadingProps) => (
 const Img = ({ src, alt }: ImgProps) => {
   const [error, setError] = useState(false)
 
-  if (!src) return null
+  if (!src || typeof src !== 'string') return null
 
   return (
     <div className="w-full max-w-xl">

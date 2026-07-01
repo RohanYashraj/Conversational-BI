@@ -2,7 +2,7 @@ import { toast } from 'sonner'
 
 import { APIRoutes } from './routes'
 
-import { AgentDetails, Sessions, TeamDetails } from '@/types/os'
+import { AgentDetails, Sessions, TeamDetails, DashboardData } from '@/types/os'
 
 // Helper function to create headers with optional auth token
 const createHeaders = (authToken?: string): HeadersInit => {
@@ -147,6 +147,22 @@ export const getTeamsAPI = async (
   }
 }
 
+export const getDashboardAPI = async (
+  endpoint: string,
+  authToken?: string
+): Promise<DashboardData | null> => {
+  try {
+    const response = await fetch(APIRoutes.Dashboard(endpoint), {
+      method: 'GET',
+      headers: createHeaders(authToken)
+    })
+    if (!response.ok) return null
+    return (await response.json()) as DashboardData
+  } catch {
+    return null
+  }
+}
+
 export const uploadDatasetAPI = async (
   endpoint: string,
   file: File,
@@ -186,4 +202,3 @@ export const uploadDatasetAPI = async (
 
   return response.json()
 }
-

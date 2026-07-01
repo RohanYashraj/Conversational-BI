@@ -7,11 +7,12 @@ import {
   MESSAGE_THREAD_GAP
 } from './MessageItem'
 import Tooltip from '@/components/ui/tooltip'
-import { memo } from 'react'
+import { memo, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import {
   ToolCallProps,
-  ReasoningStepProps,
   ReasoningProps,
+  ReasoningSteps,
   ReferenceData,
   Reference
 } from '@/types/os'
@@ -42,7 +43,9 @@ const ReferenceItem: FC<ReferenceItemProps> = ({ reference }) => (
     <p className="min-w-0 truncate text-sm font-medium text-foreground">
       {reference.name}
     </p>
-    <p className="truncate text-xs text-muted-foreground">{reference.content}</p>
+    <p className="truncate text-xs text-muted-foreground">
+      {reference.content}
+    </p>
   </div>
 )
 
@@ -71,24 +74,7 @@ const AgentMessageWrapper = ({ message }: MessageWrapperProps) => {
     <div className="flex flex-col gap-y-9">
       {message.extra_data?.reasoning_steps &&
         message.extra_data.reasoning_steps.length > 0 && (
-          <div className={`flex items-start ${MESSAGE_THREAD_GAP}`}>
-            <div className={`${MESSAGE_AVATAR_COL} pt-0.5`}>
-              <Tooltip
-                delayDuration={0}
-                content={<p className="text-popover-foreground">Reasoning</p>}
-                side="top"
-                ariaLabel="Reasoning steps"
-              >
-                <Icon type="reasoning" size="sm" aria-hidden="true" />
-              </Tooltip>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Reasoning
-              </p>
-              <Reasonings reasoning={message.extra_data.reasoning_steps} />
-            </div>
-          </div>
+          <ThinkingBlock steps={message.extra_data.reasoning_steps} />
         )}
       {message.extra_data?.references &&
         message.extra_data.references.length > 0 && (
@@ -143,27 +129,74 @@ const AgentMessageWrapper = ({ message }: MessageWrapperProps) => {
     </div>
   )
 }
-const Reasoning: FC<ReasoningStepProps> = ({ index, stepTitle }) => (
-  <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
-    <div className="flex h-[20px] shrink-0 items-center rounded-md border border-border/60 bg-secondary px-2">
-      <p className="text-xs font-medium tabular-nums text-foreground">
-        Step {index + 1}
+const ThinkingStepItem: FC<{ index: number; step: ReasoningSteps }> = ({
+  index,
+  step
+}) => (
+  <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex items-center gap-2">
+      <div className="flex h-[20px] shrink-0 items-center rounded-md border border-border/60 bg-secondary px-2">
+        <p className="text-xs font-medium tabular-nums text-foreground">
+          Step {index + 1}
+        </p>
+      </div>
+      <p className="min-w-0 text-xs font-medium text-foreground">
+        {step.title}
       </p>
     </div>
-    <p className="min-w-0 text-xs text-foreground">{stepTitle}</p>
+    {step.reasoning && (
+      <p className="whitespace-pre-wrap pl-1 text-xs italic leading-relaxed text-muted-foreground">
+        {step.reasoning}
+      </p>
+    )}
   </div>
 )
+
 const Reasonings: FC<ReasoningProps> = ({ reasoning }) => (
-  <div className="flex flex-col items-start justify-center gap-2">
-    {reasoning.map((title, index) => (
-      <Reasoning
-        key={`${title.title}-${title.action}-${index}`}
-        stepTitle={title.title}
+  <div className="flex flex-col items-start justify-center gap-3">
+    {reasoning.map((step, index) => (
+      <ThinkingStepItem
+        key={`${step.title}-${step.action}-${index}`}
+        step={step}
         index={index}
       />
     ))}
   </div>
 )
+
+// Claude-Code-style collapsible "Thinking" panel for the streamed reasoning.
+const ThinkingBlock: FC<{ steps: ReasoningSteps[] }> = ({ steps }) => {
+  const [open, setOpen] = useState(true)
+  return (
+    <div className={`flex items-start ${MESSAGE_THREAD_GAP}`}>
+      <div className={`${MESSAGE_AVATAR_COL} pt-0.5`}>
+        <Tooltip
+          delayDuration={0}
+          content={<p className="text-popover-foreground">Thinking</p>}
+          side="top"
+          ariaLabel="Thinking steps"
+        >
+          <Icon type="reasoning" size="sm" aria-hidden="true" />
+        </Tooltip>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          aria-expanded={open}
+          className="flex w-fit items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Thinking
+          <ChevronDown
+            className={`h-3 w-3 transition-transform ${open ? '' : '-rotate-90'}`}
+            aria-hidden="true"
+          />
+        </button>
+        {open && <Reasonings reasoning={steps} />}
+      </div>
+    </div>
+  )
+}
 
 const ToolComponent = memo(({ tools }: ToolCallProps) => (
   <div className="cursor-default rounded-full border border-border/70 bg-secondary/80 px-3 py-1.5 text-xs">

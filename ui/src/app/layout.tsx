@@ -28,6 +28,11 @@ export const metadata: Metadata = {
     'Conversational analytics for portfolio and underwriting teams—grounded in data, powered by AI.'
 }
 
+// This is a fully client-rendered app (Zustand persist + nuqs read from the
+// browser). Skip static prerendering so the build/SSR never touches
+// browser-only APIs like localStorage.
+export const dynamic = 'force-dynamic'
+
 export default function RootLayout({
   children
 }: Readonly<{

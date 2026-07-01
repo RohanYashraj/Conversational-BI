@@ -80,7 +80,7 @@ const ChatInput = () => {
   }
 
   return (
-    <div className="relative mx-auto mb-1 flex w-full max-w-2xl flex-col gap-2 font-sans">
+    <div className="relative mx-auto mb-1 flex w-full max-w-4xl flex-col gap-2 font-sans">
       {attachedFiles.length > 0 && (
         <div className="flex flex-wrap gap-2 px-1">
           {attachedFiles.map((file, index) => (

@@ -57,7 +57,6 @@ interface Store {
 }
 
 export const useStore = create<Store>()(
-  // @ts-expect-error Zustand persist middleware mutators vs create() inference (strict TS)
   persist(
     (set) => ({
       hydrated: false,

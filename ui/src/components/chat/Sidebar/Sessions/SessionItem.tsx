@@ -107,7 +107,7 @@ const SessionItem = ({
           size="icon"
           type="button"
           aria-label={`Delete session ${truncateText(title, 20)}`}
-          className="transform opacity-0 transition-opacity duration-200 ease-in-out group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+          className="transform opacity-0 transition-opacity duration-200 ease-in-out hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
           onClick={(e: MouseEvent<HTMLButtonElement>) => {
             e.stopPropagation()
             setIsDeleteModalOpen(true)
