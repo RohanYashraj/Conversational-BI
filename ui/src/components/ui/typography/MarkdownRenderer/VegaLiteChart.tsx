@@ -143,13 +143,7 @@ const VegaLiteChart = ({ source, fullWidth = false }: VegaLiteChartProps) => {
       <div
         ref={containerRef}
         className={`w-full ${canDrill ? '[&_svg]:cursor-pointer' : ''}`}
-        title={canDrill ? 'Click a bar or point to drill in' : undefined}
       />
-      {canDrill && (
-        <p className="mt-1 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-          Click a bar or point to drill in
-        </p>
-      )}
     </div>
   )
 }
