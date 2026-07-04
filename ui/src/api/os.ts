@@ -2,7 +2,13 @@ import { toast } from 'sonner'
 
 import { APIRoutes } from './routes'
 
-import { AgentDetails, Sessions, TeamDetails, DashboardData } from '@/types/os'
+import {
+  AgentDetails,
+  Sessions,
+  TeamDetails,
+  DashboardData,
+  ProvenanceResponse
+} from '@/types/os'
 
 // Helper function to create headers with optional auth token
 const createHeaders = (authToken?: string): HeadersInit => {
@@ -158,6 +164,26 @@ export const getDashboardAPI = async (
     })
     if (!response.ok) return null
     return (await response.json()) as DashboardData
+  } catch {
+    return null
+  }
+}
+
+export const getProvenanceAPI = async (
+  endpoint: string,
+  sessionId: string,
+  since: number,
+  authToken?: string
+): Promise<ProvenanceResponse | null> => {
+  try {
+    const url = new URL(APIRoutes.Provenance(endpoint, sessionId))
+    url.searchParams.set('since', String(since))
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: createHeaders(authToken)
+    })
+    if (!response.ok) return null
+    return (await response.json()) as ProvenanceResponse
   } catch {
     return null
   }

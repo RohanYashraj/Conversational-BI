@@ -49,8 +49,17 @@ REASONING_ENABLED = os.getenv("BI_REASONING", "true").lower() == "true"
 # --- Follow-up suggestions ---------------------------------------------------
 # Agno-native: after each answer the team proposes short next questions,
 # rendered as clickable chips in the UI. One extra (cheap) model call per turn.
+# Generation is grounded in the live schema via followups.GroundedFollowupGemini.
 FOLLOWUPS_ENABLED = os.getenv("BI_FOLLOWUPS", "true").lower() == "true"
 NUM_FOLLOWUPS = int(os.getenv("BI_NUM_FOLLOWUPS", "3"))
+
+
+def followup_model():
+    """Schema-grounded Gemini used only for followup generation."""
+    from .followups import GroundedFollowupGemini
+
+    api_key = os.getenv("GOOGLE_API_KEY")
+    return GroundedFollowupGemini(id=GEMINI_MODEL, api_key=api_key)
 
 
 # --- AgentOS / sessions ----------------------------------------------------

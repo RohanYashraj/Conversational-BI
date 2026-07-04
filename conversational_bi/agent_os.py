@@ -47,6 +47,19 @@ agent_os = AgentOS(
 app = agent_os.get_app()
 
 
+@app.get("/provenance/{session_id}")
+async def provenance(session_id: str, since: float = 0.0) -> dict:
+    """Queries executed for a session after `since` (unix seconds). The UI
+    fetches this when a run completes and renders a per-answer "Sources" panel:
+    the exact SQL, rows returned and timing behind every figure shown."""
+    schema = data_layer.get_schema()
+    return {
+        "table": schema["table"],
+        "table_rows": schema["row_count"],
+        "queries": tools.get_provenance(session_id, since=since),
+    }
+
+
 @app.get("/dashboard")
 async def dashboard() -> dict:
     """On-load portfolio overview: headline KPIs + the standard cuts, computed

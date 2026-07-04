@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import re
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -205,6 +206,7 @@ class QueryResult:
     row_count: int
     truncated: bool
     error: str | None = None
+    elapsed_ms: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -214,6 +216,7 @@ class QueryResult:
             "row_count": self.row_count,
             "truncated": self.truncated,
             "error": self.error,
+            "elapsed_ms": self.elapsed_ms,
         }
 
 
@@ -225,11 +228,14 @@ def run_sql(sql: str) -> QueryResult:
         return QueryResult(sql=sql, columns=[], rows=[], row_count=0, truncated=False, error=str(e))
 
     con = load_book()
+    start = time.perf_counter()
     try:
         df = con.execute(safe).fetchdf()
     except Exception as e:  # noqa: BLE001 - surface DB errors to the agent cleanly
         return QueryResult(sql=safe, columns=[], rows=[], row_count=0, truncated=False,
-                           error=f"SQL execution error: {e}")
+                           error=f"SQL execution error: {e}",
+                           elapsed_ms=round((time.perf_counter() - start) * 1000, 1))
+    elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
 
     truncated = len(df) > config.MAX_ROWS
     if truncated:
@@ -241,6 +247,7 @@ def run_sql(sql: str) -> QueryResult:
         rows=rows,
         row_count=len(rows),
         truncated=truncated,
+        elapsed_ms=elapsed_ms,
     )
 
 

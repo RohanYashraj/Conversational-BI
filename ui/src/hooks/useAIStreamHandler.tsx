@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 
 import { APIRoutes } from '@/api/routes'
-import { uploadDatasetAPI } from '@/api/os'
+import { uploadDatasetAPI, getProvenanceAPI } from '@/api/os'
 
 import useChatActions from '@/hooks/useChatActions'
 import { useStore } from '../store'
@@ -197,6 +197,9 @@ const useAIChatStreamHandler = () => {
 
       let lastContent = ''
       let newSessionId = sessionId
+      // Provenance window: queries executed after this moment belong to this
+      // answer (1s margin for clock granularity).
+      const sendTs = Date.now() / 1000 - 1
       try {
         const endpointUrl = constructEndpointUrl(selectedEndpoint)
 
@@ -489,6 +492,32 @@ const useAIChatStreamHandler = () => {
           },
           onComplete: () => {}
         })
+
+        // Fetch per-answer provenance (the exact SQL behind the figures) and
+        // attach it to the answer as a collapsible "Sources" panel. Best
+        // effort — a failure here never affects the answer itself.
+        if (newSessionId) {
+          const prov = await getProvenanceAPI(
+            constructEndpointUrl(selectedEndpoint),
+            newSessionId,
+            sendTs,
+            authToken || undefined
+          )
+          if (prov && prov.queries.length > 0) {
+            setMessages((prevMessages) => {
+              const newMessages = [...prevMessages]
+              const lastMessage = newMessages[newMessages.length - 1]
+              if (
+                lastMessage &&
+                lastMessage.role === 'agent' &&
+                !lastMessage.streamingError
+              ) {
+                lastMessage.provenance = prov.queries
+              }
+              return newMessages
+            })
+          }
+        }
       } catch (error) {
         updateMessagesWithErrorState()
         setStreamingErrorMessage(

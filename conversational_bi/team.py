@@ -14,7 +14,13 @@ from agno.tools.reasoning import ReasoningTools
 
 from . import config, prompts
 from .agents import build_insight_agent, build_query_agent, build_viz_agent
-from .tools import default_dashboard, get_active_filters, premium_bridge, set_active_filters
+from .tools import (
+    default_dashboard,
+    get_active_filters,
+    lookup_glossary,
+    premium_bridge,
+    set_active_filters,
+)
 
 
 def build_bi_team(*, db: SqliteDb) -> Team:
@@ -23,7 +29,13 @@ def build_bi_team(*, db: SqliteDb) -> Team:
     # think in visible steps (streamed to the UI) before/while it delegates —
     # our own Gemini model drives it, so it stays model-agnostic and inside
     # the AgentOS framework.
-    leader_tools = [get_active_filters, set_active_filters, default_dashboard, premium_bridge]
+    leader_tools = [
+        get_active_filters,
+        set_active_filters,
+        default_dashboard,
+        premium_bridge,
+        lookup_glossary,
+    ]
     if config.REASONING_ENABLED:
         leader_tools.insert(0, ReasoningTools(add_instructions=True))
 
@@ -54,6 +66,9 @@ def build_bi_team(*, db: SqliteDb) -> Team:
         # Agno's native follow-up suggestions: after each answer the team
         # generates short next-question prompts (streamed to the UI as a
         # TeamFollowupsCompleted event and rendered as clickable chips).
+        # The dedicated followup_model grounds them in the live schema so they
+        # only suggest questions this book can actually answer.
         followups=config.FOLLOWUPS_ENABLED,
         num_followups=config.NUM_FOLLOWUPS,
+        followup_model=config.followup_model(),
     )

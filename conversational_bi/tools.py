@@ -10,11 +10,56 @@ Tools that need conversational memory (the carried-forward filter) accept an
 from __future__ import annotations
 
 import json
+import time
+from collections import deque
 from typing import Any
 
 from agno.run import RunContext
 
-from . import data_layer
+from . import data_layer, glossary
+
+
+def lookup_glossary(term: str = "") -> str:
+    """Look up the governed business definition of a metric: what it means and
+    how it is calculated. Use this whenever the user asks "what is X?" or "how
+    is X calculated?" for terms like premium, weighted rate change, loss ratio,
+    retention, premium bridge, or exposure change. Pass an empty term to list
+    the whole glossary. Answer strictly from what this returns — never invent
+    a definition.
+    """
+    return json.dumps(glossary.lookup(term), indent=2)
+
+
+# --------------------------------------------------------------------------
+# Provenance: every SQL executed on behalf of a session, so each answer can
+# show its sources ("computed from N rows via this query"). Best-effort and
+# in-memory; the persisted session_state audit_log remains the durable trail.
+# --------------------------------------------------------------------------
+_PROVENANCE_MAX_PER_SESSION = 200
+_provenance: dict[str, deque[dict[str, Any]]] = {}
+
+
+def _log_provenance(run_context: RunContext | None, result: data_layer.QueryResult, source: str) -> None:
+    session_id = getattr(run_context, "session_id", None)
+    if not session_id:
+        return
+    log = _provenance.setdefault(session_id, deque(maxlen=_PROVENANCE_MAX_PER_SESSION))
+    log.append(
+        {
+            "ts": time.time(),
+            "source": source,
+            "sql": result.sql,
+            "rows": result.row_count,
+            "truncated": result.truncated,
+            "elapsed_ms": result.elapsed_ms,
+            "error": result.error,
+        }
+    )
+
+
+def get_provenance(session_id: str, since: float = 0.0) -> list[dict[str, Any]]:
+    """Queries executed for a session after `since` (unix seconds)."""
+    return [e for e in _provenance.get(session_id, []) if e["ts"] > since]
 
 
 # --------------------------------------------------------------------------
@@ -49,6 +94,7 @@ def query_data(sql: str, run_context: RunContext) -> str:
     if run_context.session_state is not None:
         log = run_context.session_state.setdefault("audit_log", [])
         log.append({"sql": result.sql, "rows": result.row_count, "error": result.error})
+    _log_provenance(run_context, result, source="query")
 
     return json.dumps(result.to_dict(), indent=2, default=str)
 
@@ -275,7 +321,9 @@ def _signed_money(amount: float, kind: str) -> str:
 _BRIDGE_COLS = ("expiry_gwp", "expiry_adjuted_gwp", "ren_gwp")
 
 
-def _premium_bridge(segment: str = "", region: str = "") -> dict[str, Any]:
+def _premium_bridge(
+    segment: str = "", region: str = "", run_context: RunContext | None = None
+) -> dict[str, Any]:
     """Decompose the renewal premium walk — Expiring → Exposure/Other → Rate →
     Renewed (+ New business when present) — into an exact, additive bridge with a
     ready-to-render Vega-Lite waterfall. Uses expiry_gwp, expiry_adjuted_gwp and
@@ -307,6 +355,7 @@ def _premium_bridge(segment: str = "", region: str = "") -> dict[str, Any]:
         f'SUM(ren_gwp)-SUM(expiry_adjuted_gwp) AS rate, '
         f'SUM(ren_gwp) AS renewed FROM "{tbl}" WHERE {where}'
     )
+    _log_provenance(run_context, res, source="premium_bridge")
     if res.error or not res.rows or not isinstance(res.rows[0].get("expiring"), (int, float)):
         return {"error": res.error or "No renewal premium found for that slice.",
                 "components": [], "spec": None}
@@ -384,7 +433,7 @@ def _premium_bridge(segment: str = "", region: str = "") -> dict[str, Any]:
             "rate": rate, "renewed": renewed, "new_business": new_biz}
 
 
-def premium_bridge(segment: str = "", region: str = "") -> str:
+def premium_bridge(run_context: RunContext, segment: str = "", region: str = "") -> str:
     """Show the premium bridge (a renewal premium walk) as a waterfall: how the
     book moved from expiring premium to renewed premium via exposure/other change
     and rate change (plus new business when the book has it).
@@ -397,7 +446,10 @@ def premium_bridge(segment: str = "", region: str = "") -> str:
     ready Vega-Lite `spec`. Present the components as a short table, embed the
     `spec` verbatim in a ```vega-lite fence, and add one line on the drivers.
     """
-    return json.dumps(_premium_bridge(segment=segment, region=region), default=str)
+    return json.dumps(
+        _premium_bridge(segment=segment, region=region, run_context=run_context),
+        default=str,
+    )
 
 
 def _loss_ratio_col(names: set[str]) -> str | None:
@@ -442,14 +494,18 @@ def _dashboard_cuts_sql() -> dict[str, str]:
     }
 
 
-def default_dashboard() -> str:
+def default_dashboard(run_context: RunContext) -> str:
     """Return the standard on-load dashboard cuts (the same views as today's
     Summary tab): premium and weighted rate change by segment, by region, by
     underwriter, top accounts by premium, and the quarterly trend. Returns JSON
     with one block per cut. Call this when the user opens the tool or asks for
     "the dashboard" / "the overview".
     """
-    out = {name: data_layer.run_sql(sql).to_dict() for name, sql in _dashboard_cuts_sql().items()}
+    out = {}
+    for name, sql in _dashboard_cuts_sql().items():
+        res = data_layer.run_sql(sql)
+        _log_provenance(run_context, res, source=f"dashboard:{name}")
+        out[name] = res.to_dict()
     return json.dumps(out, indent=2, default=str)
 
 

@@ -218,10 +218,27 @@ export interface ChatMessage {
     references?: ReferenceData[]
   }
   followups?: string[]
+  provenance?: ProvenanceQuery[]
   images?: ImageData[]
   videos?: VideoData[]
   audio?: AudioData[]
   response_audio?: ResponseAudio
+}
+
+export interface ProvenanceQuery {
+  ts: number
+  source: string
+  sql: string
+  rows: number
+  truncated: boolean
+  elapsed_ms: number
+  error: string | null
+}
+
+export interface ProvenanceResponse {
+  table: string
+  table_rows: number
+  queries: ProvenanceQuery[]
 }
 
 export interface DashboardCut {

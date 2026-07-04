@@ -8,9 +8,10 @@ import {
 } from './MessageItem'
 import Tooltip from '@/components/ui/tooltip'
 import { memo, useState } from 'react'
-import { ChevronDown, MessageCirclePlus } from 'lucide-react'
+import { ChevronDown, Database, MessageCirclePlus } from 'lucide-react'
 import {
   ToolCallProps,
+  ProvenanceQuery,
   ReasoningProps,
   ReasoningSteps,
   ReferenceData,
@@ -70,6 +71,80 @@ const References: FC<ReferenceProps> = ({ references }) => (
     ))}
   </div>
 )
+
+/**
+ * Per-answer provenance: the exact SQL executed for this answer, with row
+ * counts and timing. Collapsed by default — transparency without exposing
+ * code in the answer itself.
+ */
+const SourcesBlock: FC<{ queries: ProvenanceQuery[] }> = ({ queries }) => {
+  const [open, setOpen] = useState(false)
+  const ok = queries.filter((q) => !q.error)
+  return (
+    <div className={`flex items-start ${MESSAGE_THREAD_GAP}`}>
+      <div className={`${MESSAGE_AVATAR_COL} pt-0.5`}>
+        <Tooltip
+          delayDuration={0}
+          content={<p className="text-popover-foreground">Sources</p>}
+          side="top"
+          ariaLabel="Data sources"
+        >
+          <Database
+            className="h-4 w-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+        </Tooltip>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen((prev) => !prev)}
+          aria-expanded={open}
+          className="flex w-fit items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Sources · {ok.length} {ok.length === 1 ? 'query' : 'queries'}
+          <ChevronDown
+            className={`h-3 w-3 transition-transform ${open ? '' : '-rotate-90'}`}
+            aria-hidden="true"
+          />
+        </button>
+        {open && (
+          <div className="flex flex-col gap-2">
+            {queries.map((q, index) => (
+              <div
+                key={`${q.ts}-${index}`}
+                className="flex flex-col gap-1 rounded-md border border-border/60 bg-muted/30 p-2"
+              >
+                <div className="flex flex-wrap items-center gap-2 text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                  <span className="rounded bg-secondary px-1.5 py-0.5 font-medium text-foreground">
+                    {q.source}
+                  </span>
+                  {q.error ? (
+                    <span className="text-destructive">rejected</span>
+                  ) : (
+                    <>
+                      <span>
+                        {q.rows.toLocaleString()} row{q.rows === 1 ? '' : 's'}
+                        {q.truncated ? ' (truncated)' : ''}
+                      </span>
+                      <span>{q.elapsed_ms} ms</span>
+                    </>
+                  )}
+                </div>
+                <pre className="overflow-x-auto whitespace-pre-wrap font-dmmono text-[0.7rem] leading-relaxed text-muted-foreground">
+                  {q.sql}
+                </pre>
+                {q.error && (
+                  <p className="text-xs text-destructive">{q.error}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 /**
  * Clickable follow-up suggestion chips (Agno's native followups feature).
@@ -163,6 +238,9 @@ const AgentMessageWrapper = ({ message, isLastMessage }: MessageWrapperProps) =>
         </div>
       )}
       <AgentMessage message={message} />
+      {message.provenance && message.provenance.length > 0 && (
+        <SourcesBlock queries={message.provenance} />
+      )}
       {isLastMessage &&
         message.followups &&
         message.followups.length > 0 &&

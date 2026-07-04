@@ -13,6 +13,8 @@ export const APIRoutes = {
   Status: (agentOSUrl: string) => `${agentOSUrl}/health`,
   DatasetUpload: (agentOSUrl: string) => `${agentOSUrl}/datasets/upload`,
   Dashboard: (agentOSUrl: string) => `${agentOSUrl}/dashboard`,
+  Provenance: (agentOSUrl: string, sessionId: string) =>
+    `${agentOSUrl}/provenance/${enc(sessionId)}`,
   Metrics: (agentOSUrl: string) => `${agentOSUrl}/metrics`,
   MetricsRefresh: (agentOSUrl: string) => `${agentOSUrl}/metrics/refresh`,
   Models: (agentOSUrl: string) => `${agentOSUrl}/models`,
