@@ -280,6 +280,15 @@ const useAIChatStreamHandler = () => {
               chunk.event === RunEvent.RunContent ||
               chunk.event === RunEvent.TeamRunContent
             ) {
+              // In team mode, plain RunContent events are MEMBER-agent
+              // intermediates (the Query/Viz/Insight agents' working output),
+              // not the user-facing answer. Rendering them flashes a partial
+              // "answer" that the leader later overwrites — confusing. Only
+              // the leader's TeamRunContent is the real response; member
+              // activity stays visible via the thought process and tools.
+              if (mode === 'team' && chunk.event === RunEvent.RunContent) {
+                return
+              }
               setMessages((prevMessages) => {
                 const newMessages = [...prevMessages]
                 const lastMessage = newMessages[newMessages.length - 1]
@@ -435,6 +444,14 @@ const useAIChatStreamHandler = () => {
               chunk.event === RunEvent.RunCompleted ||
               chunk.event === RunEvent.TeamRunCompleted
             ) {
+              // Same member-vs-leader distinction as RunContent: in team mode
+              // a plain RunCompleted is a MEMBER agent finishing its subtask.
+              // Its content would REPLACE the message and read like a final
+              // answer (the confusing "intermediate response") until the
+              // leader's TeamRunCompleted overwrites it. Skip members.
+              if (mode === 'team' && chunk.event === RunEvent.RunCompleted) {
+                return
+              }
               setMessages((prevMessages) => {
                 const newMessages = prevMessages.map((message, index) => {
                   if (

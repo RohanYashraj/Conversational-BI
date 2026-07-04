@@ -92,7 +92,9 @@ export const useStore = create<Store>()(
       setTeams: (teams) => set({ teams }),
       selectedModel: '',
       setSelectedModel: (selectedModel) => set(() => ({ selectedModel })),
-      mode: 'agent',
+      // The BI orchestrator is a team; default there so the app is usable
+      // immediately (initialize() auto-selects the first team on load).
+      mode: 'team',
       setMode: (mode) => set(() => ({ mode })),
       sessionsData: null,
       setSessionsData: (sessionsData) =>
