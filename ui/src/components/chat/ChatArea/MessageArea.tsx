@@ -73,7 +73,7 @@ const MessageArea = () => {
       initial="smooth"
     >
       <StickToBottom.Content className="flex min-h-full flex-col justify-center">
-        <div className="mx-auto w-full max-w-4xl space-y-9 px-4 pb-4">
+        <div className="mx-auto w-full max-w-4xl space-y-7 px-4 pb-4">
           <Messages messages={messages} />
         </div>
       </StickToBottom.Content>

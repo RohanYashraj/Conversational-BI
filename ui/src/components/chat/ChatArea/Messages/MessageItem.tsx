@@ -12,10 +12,11 @@ interface MessageProps {
   message: ChatMessage
 }
 
-/** Left gutter: fixed width so meta rows + bubbles share one text edge. */
-export const MESSAGE_AVATAR_COL = 'flex w-9 shrink-0 justify-center'
-export const MESSAGE_THREAD_GAP = 'gap-4'
-
+/**
+ * Assistant reply — full-width plain text at the column's left edge, no
+ * bubble and no avatar (the modern public-LLM pattern: ChatGPT, Claude,
+ * Gemini all frame the model reply as document text, not a chat bubble).
+ */
 const AgentMessage = ({ message }: MessageProps) => {
   const { streamingErrorMessage } = useStore()
   let messageContent
@@ -73,43 +74,28 @@ const AgentMessage = ({ message }: MessageProps) => {
   }
 
   return (
-    <div
-      className={`flex flex-row items-start font-sans ${MESSAGE_THREAD_GAP}`}
-    >
-      <div className={`${MESSAGE_AVATAR_COL} pt-0.5`}>
-        <Icon
-          type="agent"
-          size="sm"
-          className="text-primary"
-          aria-hidden="true"
-        />
-        <span className="sr-only">Agent</span>
-      </div>
-      <div className="min-w-0 flex-1">{messageContent}</div>
+    <div className="min-w-0 font-sans">
+      <span className="sr-only">Assistant</span>
+      {messageContent}
     </div>
   )
 }
 
+/**
+ * User message — right-aligned bubble capped at ~75% of the column, the
+ * universal sent-message convention in public LLM interfaces.
+ */
 const UserMessage = memo(({ message }: MessageProps) => {
   return (
-    <div
-      className={`flex items-start text-start max-md:break-words ${MESSAGE_THREAD_GAP}`}
-    >
-      <div className={`${MESSAGE_AVATAR_COL} pt-3`}>
-        <Icon
-          type="user"
-          size="sm"
-          className="text-foreground"
-          aria-hidden="true"
-        />
-      </div>
-      <div className="min-w-0 max-w-[min(100%,56rem)] rounded-2xl rounded-tl-md border border-border/60 bg-gradient-to-br from-secondary/90 to-muted/80 px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm">
+    <div className="flex justify-end font-sans max-md:break-words">
+      <div className="min-w-0 max-w-[75%] rounded-3xl rounded-br-lg bg-secondary px-4 py-2.5 text-sm leading-relaxed text-foreground">
+        <span className="sr-only">You</span>
         {message.content && (
           <p className="whitespace-pre-wrap">{message.content}</p>
         )}
         {message.attachments && message.attachments.length > 0 && (
           <div
-            className={`flex flex-wrap gap-2 ${message.content ? 'mt-2' : ''}`}
+            className={`flex flex-wrap justify-end gap-2 ${message.content ? 'mt-2' : ''}`}
           >
             {message.attachments.map((attachment, index) => (
               <span

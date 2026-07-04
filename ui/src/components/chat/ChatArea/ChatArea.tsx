@@ -10,7 +10,7 @@ const ChatArea = () => {
       tabIndex={-1}
     >
       <MessageArea />
-      <div className="sticky bottom-0 ml-9 shrink-0 px-4 pb-3 pt-1">
+      <div className="sticky bottom-0 shrink-0 px-4 pb-3 pt-1">
         <ChatInput />
       </div>
     </main>

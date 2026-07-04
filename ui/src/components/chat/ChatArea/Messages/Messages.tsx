@@ -25,8 +25,10 @@ interface MessageWrapperProps {
   isLastMessage: boolean
 }
 
-/** Indent that lines meta rows up with the message text edge (avatar 36px + gap 16px). */
-const TEXT_EDGE_INDENT = 'ml-[52px]'
+/** Meta rows sit at the column's left edge, flush with the assistant text
+ * (the avatar gutter is gone — public-LLM interfaces frame replies as
+ * document text, not chat bubbles). */
+const TEXT_EDGE_INDENT = ''
 
 interface ReferenceProps {
   references: ReferenceData[]
