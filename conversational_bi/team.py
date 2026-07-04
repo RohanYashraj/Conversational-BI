@@ -16,6 +16,7 @@ from . import config, prompts
 from .agents import build_insight_agent, build_query_agent, build_viz_agent
 from .tools import (
     default_dashboard,
+    find_anomalies,
     get_active_filters,
     lookup_glossary,
     premium_bridge,
@@ -35,6 +36,7 @@ def build_bi_team(*, db: SqliteDb) -> Team:
         default_dashboard,
         premium_bridge,
         lookup_glossary,
+        find_anomalies,
     ]
     if config.REASONING_ENABLED:
         leader_tools.insert(0, ReasoningTools(add_instructions=True))
