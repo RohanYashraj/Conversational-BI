@@ -122,6 +122,7 @@ const useSessionLoader = () => {
                   content: (run.content as string) ?? '',
                   tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
                   extra_data: run.extra_data,
+                  followups: run.followups,
                   images: run.images,
                   videos: run.videos,
                   audio: run.audio,

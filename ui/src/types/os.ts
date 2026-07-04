@@ -97,6 +97,8 @@ export enum RunEvent {
   ReasoningStarted = 'ReasoningStarted',
   ReasoningStep = 'ReasoningStep',
   ReasoningCompleted = 'ReasoningCompleted',
+  FollowupsStarted = 'FollowupsStarted',
+  FollowupsCompleted = 'FollowupsCompleted',
   RunCancelled = 'RunCancelled',
   RunPaused = 'RunPaused',
   RunContinued = 'RunContinued',
@@ -111,6 +113,8 @@ export enum RunEvent {
   TeamReasoningStarted = 'TeamReasoningStarted',
   TeamReasoningStep = 'TeamReasoningStep',
   TeamReasoningCompleted = 'TeamReasoningCompleted',
+  TeamFollowupsStarted = 'TeamFollowupsStarted',
+  TeamFollowupsCompleted = 'TeamFollowupsCompleted',
   TeamMemoryUpdateStarted = 'TeamMemoryUpdateStarted',
   TeamMemoryUpdateCompleted = 'TeamMemoryUpdateCompleted'
 }
@@ -143,6 +147,7 @@ export interface RunResponseContent {
   tools?: Array<ToolCall>
   created_at: number
   extra_data?: AgentExtraData
+  followups?: string[]
   images?: ImageData[]
   videos?: VideoData[]
   audio?: AudioData[]
@@ -165,6 +170,7 @@ export interface RunResponse {
   tools?: Array<ToolCall>
   created_at: number
   extra_data?: AgentExtraData
+  followups?: string[]
   images?: ImageData[]
   videos?: VideoData[]
   audio?: AudioData[]
@@ -211,6 +217,7 @@ export interface ChatMessage {
     reasoning_messages?: ReasoningMessage[]
     references?: ReferenceData[]
   }
+  followups?: string[]
   images?: ImageData[]
   videos?: VideoData[]
   audio?: AudioData[]

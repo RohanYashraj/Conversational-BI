@@ -51,4 +51,9 @@ def build_bi_team(*, db: SqliteDb) -> Team:
         # state tool, which also emits a noisy arg-parse warning at startup.
         enable_agentic_state=False,
         markdown=True,
+        # Agno's native follow-up suggestions: after each answer the team
+        # generates short next-question prompts (streamed to the UI as a
+        # TeamFollowupsCompleted event and rendered as clickable chips).
+        followups=config.FOLLOWUPS_ENABLED,
+        num_followups=config.NUM_FOLLOWUPS,
     )

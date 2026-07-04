@@ -46,6 +46,12 @@ def gemini_model() -> Gemini:
 # panel). It adds model round-trips, so it is a config toggle.
 REASONING_ENABLED = os.getenv("BI_REASONING", "true").lower() == "true"
 
+# --- Follow-up suggestions ---------------------------------------------------
+# Agno-native: after each answer the team proposes short next questions,
+# rendered as clickable chips in the UI. One extra (cheap) model call per turn.
+FOLLOWUPS_ENABLED = os.getenv("BI_FOLLOWUPS", "true").lower() == "true"
+NUM_FOLLOWUPS = int(os.getenv("BI_NUM_FOLLOWUPS", "3"))
+
 
 # --- AgentOS / sessions ----------------------------------------------------
 SESSION_DB_PATH = os.getenv("BI_SESSION_DB", str(BASE_DIR.parent / "bi_sessions.db"))

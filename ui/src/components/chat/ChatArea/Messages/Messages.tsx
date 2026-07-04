@@ -8,7 +8,7 @@ import {
 } from './MessageItem'
 import Tooltip from '@/components/ui/tooltip'
 import { memo, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, MessageCirclePlus } from 'lucide-react'
 import {
   ToolCallProps,
   ReasoningProps,
@@ -20,6 +20,8 @@ import React, { type FC } from 'react'
 
 import Icon from '@/components/ui/icon'
 import ChatBlankState from './ChatBlankState'
+import { useStore } from '@/store'
+import useAIChatStreamHandler from '@/hooks/useAIStreamHandler'
 
 interface MessageListProps {
   messages: ChatMessage[]
@@ -69,7 +71,42 @@ const References: FC<ReferenceProps> = ({ references }) => (
   </div>
 )
 
-const AgentMessageWrapper = ({ message }: MessageWrapperProps) => {
+/**
+ * Clickable follow-up suggestion chips (Agno's native followups feature).
+ * Shown under the latest answer only, like Claude.ai — clicking one sends it
+ * as the next message.
+ */
+const FollowupChips: FC<{ followups: string[] }> = ({ followups }) => {
+  const isStreaming = useStore((state) => state.isStreaming)
+  const { handleStreamResponse } = useAIChatStreamHandler()
+
+  if (isStreaming) return null
+
+  return (
+    <div className={`flex items-start ${MESSAGE_THREAD_GAP}`}>
+      <div className={`${MESSAGE_AVATAR_COL} pt-1`}>
+        <MessageCirclePlus
+          className="h-4 w-4 text-muted-foreground"
+          aria-hidden="true"
+        />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+        {followups.map((followup, index) => (
+          <button
+            key={`${followup}-${index}`}
+            type="button"
+            onClick={() => void handleStreamResponse(followup)}
+            className="rounded-full border border-border/80 bg-card/70 px-3 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-foreground"
+          >
+            {followup}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const AgentMessageWrapper = ({ message, isLastMessage }: MessageWrapperProps) => {
   return (
     <div className="flex flex-col gap-y-9">
       {message.extra_data?.reasoning_steps &&
@@ -126,6 +163,12 @@ const AgentMessageWrapper = ({ message }: MessageWrapperProps) => {
         </div>
       )}
       <AgentMessage message={message} />
+      {isLastMessage &&
+        message.followups &&
+        message.followups.length > 0 &&
+        !message.streamingError && (
+          <FollowupChips followups={message.followups} />
+        )}
     </div>
   )
 }

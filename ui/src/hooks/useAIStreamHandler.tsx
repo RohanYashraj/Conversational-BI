@@ -383,6 +383,26 @@ const useAIChatStreamHandler = () => {
                 return newMessages
               })
             } else if (
+              chunk.event === RunEvent.FollowupsCompleted ||
+              chunk.event === RunEvent.TeamFollowupsCompleted
+            ) {
+              // Agno-native follow-up suggestions, rendered as clickable chips.
+              setMessages((prevMessages) => {
+                const newMessages = [...prevMessages]
+                const lastMessage = newMessages[newMessages.length - 1]
+                if (
+                  lastMessage &&
+                  lastMessage.role === 'agent' &&
+                  Array.isArray(chunk.followups) &&
+                  chunk.followups.length > 0
+                ) {
+                  lastMessage.followups = chunk.followups.filter(
+                    (f): f is string => typeof f === 'string' && f.length > 0
+                  )
+                }
+                return newMessages
+              })
+            } else if (
               chunk.event === RunEvent.RunError ||
               chunk.event === RunEvent.TeamRunError ||
               chunk.event === RunEvent.TeamRunCancelled
