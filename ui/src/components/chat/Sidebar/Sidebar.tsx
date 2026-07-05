@@ -14,7 +14,6 @@ import AuthToken from './AuthToken'
 import { isValidUrl } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useQueryState } from 'nuqs'
-import { truncateText } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { ChevronDown, Settings2 } from 'lucide-react'
@@ -243,10 +242,12 @@ const Endpoint = () => {
                   exit={{ opacity: reduceMotion ? 1 : 0 }}
                   transition={{ duration: reduceMotion ? 0 : 0.2 }}
                 >
-                  <p className="min-w-0 truncate text-xs font-medium text-muted-foreground">
+                  <p
+                    className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground"
+                    title={isMounted ? selectedEndpoint : undefined}
+                  >
                     {isMounted
-                      ? truncateText(selectedEndpoint, 21) ||
-                        ENDPOINT_PLACEHOLDER
+                      ? selectedEndpoint || ENDPOINT_PLACEHOLDER
                       : 'http://localhost:7777'}
                   </p>
                   <div
