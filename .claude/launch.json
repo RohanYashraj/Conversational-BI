@@ -4,7 +4,7 @@
     {
       "name": "ui",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--dir", "ui", "exec", "next", "dev"],
+      "runtimeArgs": ["--dir", "ui", "run", "dev"],
       "port": 3000,
       "autoPort": true
     }
