@@ -21,7 +21,33 @@ from fastapi import File, HTTPException, UploadFile
 from . import config, data_layer, tools
 from .team import build_bi_team
 
-db = SqliteDb(db_file=config.SESSION_DB_PATH)
+
+def _build_db():
+    """Neon Postgres in production (BI_DATABASE_URL set), local SQLite in dev.
+
+    Same agno DB interface either way — sessions, memory, traces and metrics
+    all follow whichever backend is active, so switching environments is a
+    config change only."""
+    if config.DATABASE_URL:
+        from agno.db.postgres import PostgresDb
+
+        url = config.DATABASE_URL
+        # Neon hands out postgres(ql):// URLs; SQLAlchemy would resolve those
+        # to the psycopg2 driver, but we ship psycopg (v3) — pin it explicitly.
+        if url.startswith("postgres://"):
+            url = "postgresql+psycopg://" + url[len("postgres://"):]
+        elif url.startswith("postgresql://"):
+            url = "postgresql+psycopg://" + url[len("postgresql://"):]
+        # libpq waits FOREVER on an unreachable host by default, which shows
+        # up as the server hanging at "Waiting for application startup." —
+        # fail fast with a clear error instead.
+        if "connect_timeout=" not in url:
+            url += ("&" if "?" in url else "?") + "connect_timeout=10"
+        return PostgresDb(db_url=url)
+    return SqliteDb(db_file=config.SESSION_DB_PATH)
+
+
+db = _build_db()
 bi_team = build_bi_team(db=db)
 
 _DATA_EXTENSIONS = {".xlsx", ".xls", ".csv"}

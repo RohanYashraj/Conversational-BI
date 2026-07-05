@@ -15,7 +15,13 @@ services:
         sync: false # set to your Vercel URL, e.g. https://your-app.vercel.app
       - key: AGENT_OS_HOST
         value: 0.0.0.0
-      # Persist sessions on the mounted disk instead of the ephemeral container FS.
+      # Production database: set to your Neon connection string in the Render
+      # dashboard (postgresql://...@...neon.tech/neondb?sslmode=require).
+      # When set, sessions/memory/traces live in Neon and the disk below is
+      # only a fallback. Leave unset to use SQLite on the mounted disk.
+      - key: BI_DATABASE_URL
+        sync: false
+      # SQLite fallback, used only when BI_DATABASE_URL is not set.
       - key: BI_SESSION_DB
         value: /var/data/bi_sessions.db
     disk:

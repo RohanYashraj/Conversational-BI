@@ -5,7 +5,8 @@ description = "KPI Commentary Tool agent on Agno AgentOS"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "agno[os,google,sqlite]>=2.6",
+    "agno[os,google,sqlite,postgres]>=2.6",
+    "psycopg[binary]>=3.1",
     "duckdb>=1.0",
     "google-genai>=1.0",
     "openpyxl>=3.1",

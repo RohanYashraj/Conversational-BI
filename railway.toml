@@ -1,0 +1,20 @@
+# Railway config for the AgentOS backend.
+# Deploy: Railway Dashboard -> New Project -> Deploy from GitHub repo.
+# The Next.js UI in ui/ is deployed to Vercel, not here.
+#
+# Required service variables (Settings -> Variables):
+#   GOOGLE_API_KEY   - Gemini API key
+#   BI_DATABASE_URL  - Neon connection string (postgresql://...?sslmode=require).
+#                      Railway containers have no persistent disk, so without
+#                      this, sessions live in SQLite inside the container and
+#                      are LOST on every deploy/restart.
+#   BI_CORS_ORIGINS  - your UI origin, e.g. https://your-app.vercel.app
+#   AGENT_OS_HOST    - 0.0.0.0
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+restartPolicyType = "on_failure"

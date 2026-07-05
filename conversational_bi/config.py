@@ -63,6 +63,12 @@ def followup_model():
 
 
 # --- AgentOS / sessions ----------------------------------------------------
+# Managed Postgres (Neon) for production: when BI_DATABASE_URL (or the
+# conventional DATABASE_URL) is set, sessions/memory/traces are stored there.
+# When unset — the local dev default — everything stays in the SQLite file
+# below. Standard postgres:// URLs work; the psycopg driver is pinned at
+# connection time in agent_os.py.
+DATABASE_URL = os.getenv("BI_DATABASE_URL", os.getenv("DATABASE_URL", "")).strip()
 SESSION_DB_PATH = os.getenv("BI_SESSION_DB", str(BASE_DIR.parent / "bi_sessions.db"))
 # Extra browser origins allowed to call the API. The bundled UI at
 # localhost:3000 (and the Agno domains) are ALWAYS allowed — AgentOS *replaces*
