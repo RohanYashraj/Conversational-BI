@@ -88,7 +88,7 @@ const AgentMessage = ({ message }: MessageProps) => {
 const UserMessage = memo(({ message }: MessageProps) => {
   return (
     <div className="flex justify-end font-sans max-md:break-words">
-      <div className="min-w-0 max-w-[75%] rounded-3xl rounded-br-lg bg-secondary px-4 py-2.5 text-sm leading-relaxed text-foreground">
+      <div className="min-w-0 max-w-[88%] rounded-3xl rounded-br-lg bg-secondary px-4 py-2.5 text-sm leading-relaxed text-foreground md:max-w-[75%]">
         <span className="sr-only">You</span>
         {message.content && (
           <p className="whitespace-pre-wrap">{message.content}</p>

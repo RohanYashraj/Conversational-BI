@@ -46,6 +46,9 @@ interface Store {
   setSelectedModel: (model: string) => void
   mode: 'agent' | 'team'
   setMode: (mode: 'agent' | 'team') => void
+  /** Mobile-only overlay drawer state; desktop uses the inline collapse. */
+  isSidebarOpen: boolean
+  setIsSidebarOpen: (isSidebarOpen: boolean) => void
   sessionsData: SessionEntry[] | null
   setSessionsData: (
     sessionsData:
@@ -96,6 +99,8 @@ export const useStore = create<Store>()(
       // immediately (initialize() auto-selects the first team on load).
       mode: 'team',
       setMode: (mode) => set(() => ({ mode })),
+      isSidebarOpen: false,
+      setIsSidebarOpen: (isSidebarOpen) => set(() => ({ isSidebarOpen })),
       sessionsData: null,
       setSessionsData: (sessionsData) =>
         set((state) => ({

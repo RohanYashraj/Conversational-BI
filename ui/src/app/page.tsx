@@ -18,7 +18,7 @@ export default function Home() {
         </div>
       }
     >
-      <div className="box-border flex h-dvh min-h-0 flex-row gap-2 overflow-hidden p-2">
+      <div className="box-border flex h-dvh min-h-0 flex-row overflow-hidden md:gap-2 md:p-2">
         <Sidebar hasEnvToken={hasEnvToken} envToken={envToken} />
         <ChatArea />
       </div>
