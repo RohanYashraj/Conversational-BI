@@ -42,6 +42,9 @@ agent_os = AgentOS(
     tracing=True,
     lifespan=lifespan,
     cors_allowed_origins=config.CORS_ORIGINS or None,
+    # Post hooks (session auto-naming) run as background tasks so they never
+    # delay the answer stream.
+    run_hooks_in_background=True,
 )
 
 app = agent_os.get_app()

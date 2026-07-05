@@ -1,7 +1,11 @@
 import { useCallback } from 'react'
 
 import { APIRoutes } from '@/api/routes'
-import { uploadDatasetAPI, getProvenanceAPI } from '@/api/os'
+import {
+  uploadDatasetAPI,
+  getProvenanceAPI,
+  getAllSessionsAPI
+} from '@/api/os'
 
 import useChatActions from '@/hooks/useChatActions'
 import { useStore } from '../store'
@@ -44,6 +48,7 @@ const useAIChatStreamHandler = () => {
   const [agentId] = useQueryState('agent')
   const [teamId] = useQueryState('team')
   const [sessionId, setSessionId] = useQueryState('session')
+  const [dbId] = useQueryState('db_id')
   const selectedEndpoint = useStore((state) => state.selectedEndpoint)
   const authToken = useStore((state) => state.authToken)
   const mode = useStore((state) => state.mode)
@@ -535,6 +540,26 @@ const useAIChatStreamHandler = () => {
             })
           }
         }
+
+        // For a brand-new conversation the backend auto-generates a session
+        // title from the exchange (agno post-hook, runs in the background).
+        // Re-fetch the list shortly after so the placeholder (the raw first
+        // question) is replaced by the generated title — quietly, without
+        // toggling the sidebar's loading skeletons.
+        const entityId = mode === 'team' ? teamId : agentId
+        if (newSessionId && newSessionId !== sessionId && entityId && dbId) {
+          setTimeout(() => {
+            getAllSessionsAPI(
+              constructEndpointUrl(selectedEndpoint),
+              mode,
+              entityId,
+              dbId,
+              authToken || undefined
+            ).then((sessions) => {
+              if (sessions.data?.length) setSessionsData(sessions.data)
+            })
+          }, 2500)
+        }
       } catch (error) {
         updateMessagesWithErrorState()
         setStreamingErrorMessage(
@@ -569,6 +594,7 @@ const useAIChatStreamHandler = () => {
       setSessionsData,
       sessionId,
       setSessionId,
+      dbId,
       processChunkToolCalls
     ]
   )

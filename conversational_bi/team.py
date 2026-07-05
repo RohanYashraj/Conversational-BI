@@ -24,6 +24,67 @@ from .tools import (
 )
 
 
+def _autoname_session(team: Team, session, run_output=None) -> None:
+    """Post-run hook: name new sessions from the conversation using agno's
+    native autogenerate (Team.set_session_name). Runs once per session — after
+    the first exchange — and never overwrites a name that already exists
+    (including manual renames). Registered as a background hook so it adds no
+    latency to the answer stream."""
+    from agno.models.message import Message
+    from agno.utils.log import log_debug, log_exception
+
+    session_data = getattr(session, "session_data", None) or {}
+    if session_data.get("session_name"):
+        return
+    try:
+        # Same recipe as agno's Team.generate_session_name, with two fixes:
+        # work on the session object the hook receives (set_session_name
+        # re-reads from the DB and races the deferred store when hooks run in
+        # the background), and name from the user/assistant exchange only —
+        # the stock helper includes the system prompt, which drowns out the
+        # question and yields generic titles like "Team Collaboration Session".
+        # The session object handed to background hooks does not yet expose
+        # this run's messages — the just-completed exchange lives on
+        # run_output. Fall back to the stored session history if needed.
+        messages = [
+            m
+            for m in (getattr(run_output, "messages", None) or [])
+            if m.role in ("user", "assistant")
+        ]
+        if not messages:
+            messages = session.get_messages(
+                skip_roles=["system", "tool"], skip_history_messages=False
+            )
+        convo = "\n".join(
+            f"{m.role.upper()}: {str(m.content)[:500]}"
+            for m in messages
+            if m.content
+        )
+        if not convo:
+            return
+        response = team.model.response(  # type: ignore[union-attr]
+            messages=[
+                Message(
+                    role="system",
+                    content=(
+                        "Provide a concise, specific title for this "
+                        "conversation in at most 5 words. Return only the "
+                        "title, no quotes or punctuation."
+                    ),
+                ),
+                Message(role="user", content=f"{convo}\n\nConversation Name: "),
+            ]
+        )
+        name = (response.content or "").replace('"', "").strip()
+        if not name or len(name.split()) > 8:
+            return
+        session.session_data = {**session_data, "session_name": name}
+        team.save_session(session=session)
+        log_debug(f"Auto-named session {session.session_id}: {name!r}")
+    except Exception:  # noqa: BLE001 - naming is cosmetic, never break a run
+        log_exception("Session auto-naming failed")
+
+
 def build_bi_team(*, db: SqliteDb) -> Team:
     """Construct the orchestrator team registered with AgentOS."""
     # Leader tools. With reasoning on, ReasoningTools lets the orchestrator
@@ -73,4 +134,6 @@ def build_bi_team(*, db: SqliteDb) -> Team:
         followups=config.FOLLOWUPS_ENABLED,
         num_followups=config.NUM_FOLLOWUPS,
         followup_model=config.followup_model(),
+        # Auto-title new sessions from the conversation (agno-native).
+        post_hooks=[_autoname_session],
     )

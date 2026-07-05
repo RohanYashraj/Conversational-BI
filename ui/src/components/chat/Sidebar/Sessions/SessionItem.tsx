@@ -9,7 +9,7 @@ import Icon from '@/components/ui/icon'
 import { useState, type MouseEvent } from 'react'
 import DeleteSessionModal from './DeleteSessionModal'
 import useChatActions from '@/hooks/useChatActions'
-import { truncateText, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 type SessionItemProps = SessionEntry & {
   isSelected: boolean
@@ -95,19 +95,23 @@ const SessionItem = ({
         )}
         onClick={handleGetSession}
       >
-        <div className="flex flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h4
-            className={cn('text-sm font-medium', isSelected && 'text-primary')}
+            className={cn(
+              'truncate text-sm font-medium',
+              isSelected && 'text-primary'
+            )}
+            title={title}
           >
-            {truncateText(title, 20)}
+            {title}
           </h4>
         </div>
         <Button
           variant="ghost"
           size="icon"
           type="button"
-          aria-label={`Delete session ${truncateText(title, 20)}`}
-          className="transform opacity-0 transition-opacity duration-200 ease-in-out hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          aria-label={`Delete session ${title}`}
+          className="shrink-0 transform opacity-0 transition-opacity duration-200 ease-in-out hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
           onClick={(e: MouseEvent<HTMLButtonElement>) => {
             e.stopPropagation()
             setIsDeleteModalOpen(true)
