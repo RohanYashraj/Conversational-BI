@@ -12,9 +12,9 @@ from agno.team import Team
 from agno.team.mode import TeamMode
 from agno.tools.reasoning import ReasoningTools
 
-from . import config, prompts
-from .agents import build_insight_agent, build_query_agent, build_viz_agent
-from .tools import (
+from .. import config, prompts
+from ..agents import build_insight_agent, build_query_agent, build_viz_agent
+from ..tools import (
     default_dashboard,
     find_anomalies,
     get_active_filters,

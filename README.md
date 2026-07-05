@@ -36,6 +36,52 @@ produces a number — every figure comes from real SQL run by the data layer.
 stays fast and debuggable. The three members are each narrow in scope so the
 leader can route cleanly and each context stays small.
 
+## Project structure
+
+Organised the way the [agno agent-api template](https://github.com/agno-agi/agent-api)
+recommends — by capability, with registries so growth is additive:
+
+```
+conversational_bi/
+├── agent_os.py        # entry point: thin composition root (Docker CMD target)
+├── config.py          # every environment-driven setting in one place
+├── data_layer.py      # guarded DuckDB SQL executor + schema introspection
+├── glossary.py        # semantic layer: governed metric definitions = the SQL
+├── agents/            # member agents, one module each (+ registry __init__)
+│   ├── query.py       #   SQL → facts (the only component that touches data)
+│   ├── viz.py         #   Vega-Lite chart spec or NO_CHART
+│   └── insight.py     #   grounded commentary; deliberately no data access
+├── teams/             # teams, one module each; build_all_teams() registry
+│   └── bi_team.py     #   the BI orchestrator + session auto-naming hook
+├── tools/             # capabilities, one module each (+ re-export __init__)
+│   ├── sql.py         #   describe_schema, query_data (guarded)
+│   ├── filters.py     #   cross-turn filter context
+│   ├── charts.py      #   make_chart_spec
+│   ├── bridge.py      #   exact premium bridge + waterfall spec
+│   ├── dashboard.py   #   on-load cuts, headline KPIs, briefing
+│   ├── anomalies.py   #   deterministic outlier sweep
+│   ├── glossary_tool.py # governed definitions lookup
+│   ├── provenance.py  #   per-session query log ("Sources" panel)
+│   └── formatting.py  #   shared json-safe/format helpers
+├── prompts/           # instructions, one module per role (+ __init__)
+├── models/            # customised LLM clients (schema-grounded followups)
+├── api/               # custom FastAPI routes (/dashboard, /provenance, uploads)
+├── db/                # AgentOS DB factory: Neon Postgres (prod) / SQLite (dev)
+└── data/              # the demo book (Demo_Policy_Level_Dummy.xlsx)
+```
+
+### Extending it
+
+- **New tool** — add a module under `tools/` (one capability per file), export
+  it in `tools/__init__.py`, attach it to an agent or team.
+- **New agent** — add `agents/<name>.py` with a `build_<name>_agent()` factory,
+  export it in `agents/__init__.py`, add a prompt module under `prompts/`, and
+  put it on a team (or register it standalone via `AgentOS(agents=[...])`).
+- **New team** — add `teams/<name>.py` with a `build_<name>_team(db=...)`
+  factory and add one line to `build_all_teams()` in `teams/__init__.py` —
+  AgentOS and the UI pick it up automatically.
+- **New endpoint** — add it to `api/routes.py` (or a new router module).
+
 ## Run it
 
 ```bash
@@ -67,7 +113,8 @@ Use Chrome or Edge for local connections ([connection FAQ](https://docs.agno.com
 - "What is the weighted rate change by segment?"
 - "Now just North America" (follow-up — inherits prior context)
 
-Validate the data layer (no API key needed — uses synthetic data):
+Validate the data layer (no API key needed — runs the guard + aggregation
+self-test against the demo book):
 
 ```bash
 python -m conversational_bi.data_layer

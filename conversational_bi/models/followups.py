@@ -15,7 +15,7 @@ from typing import Any
 from agno.models.google import Gemini
 from agno.models.message import Message
 
-from . import data_layer, glossary
+from .. import data_layer, glossary
 
 
 def _grounding_message() -> Message:

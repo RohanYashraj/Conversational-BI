@@ -1,9 +1,17 @@
-"""AgentOS entry point for the KPI Commentary Tool agent.
+"""AgentOS entry point — the thin composition root.
+
+Everything is built elsewhere and assembled here:
+    db/      -> the sessions/memory/traces database (Neon in prod, SQLite in dev)
+    teams/   -> every team registered with the OS (one line each in build_all_teams)
+    agents/  -> member agents used by the teams
+    tools/   -> capabilities, one module each
+    api/     -> custom endpoints on top of the AgentOS API
+    config   -> all environment-driven settings
 
 Run:
     python -m conversational_bi.agent_os
 
-Then connect at http://localhost:8000 from os.agno.com (Add OS → Local).
+Then connect at http://localhost:8000 from the bundled UI (ui/) or os.agno.com.
 
 Requires:
     GOOGLE_API_KEY in the environment
@@ -12,45 +20,15 @@ Requires:
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from pathlib import Path
 
-from agno.db.sqlite import SqliteDb
 from agno.os import AgentOS
-from fastapi import File, HTTPException, UploadFile
 
-from . import config, data_layer, tools
-from .team import build_bi_team
+from . import config, data_layer
+from .api import router as api_router
+from .db import build_db
+from .teams import build_all_teams
 
-
-def _build_db():
-    """Neon Postgres in production (BI_DATABASE_URL set), local SQLite in dev.
-
-    Same agno DB interface either way — sessions, memory, traces and metrics
-    all follow whichever backend is active, so switching environments is a
-    config change only."""
-    if config.DATABASE_URL:
-        from agno.db.postgres import PostgresDb
-
-        url = config.DATABASE_URL
-        # Neon hands out postgres(ql):// URLs; SQLAlchemy would resolve those
-        # to the psycopg2 driver, but we ship psycopg (v3) — pin it explicitly.
-        if url.startswith("postgres://"):
-            url = "postgresql+psycopg://" + url[len("postgres://"):]
-        elif url.startswith("postgresql://"):
-            url = "postgresql+psycopg://" + url[len("postgresql://"):]
-        # libpq waits FOREVER on an unreachable host by default, which shows
-        # up as the server hanging at "Waiting for application startup." —
-        # fail fast with a clear error instead.
-        if "connect_timeout=" not in url:
-            url += ("&" if "?" in url else "?") + "connect_timeout=10"
-        return PostgresDb(db_url=url)
-    return SqliteDb(db_file=config.SESSION_DB_PATH)
-
-
-db = _build_db()
-bi_team = build_bi_team(db=db)
-
-_DATA_EXTENSIONS = {".xlsx", ".xls", ".csv"}
+db = build_db()
 
 
 @asynccontextmanager
@@ -63,7 +41,7 @@ agent_os = AgentOS(
     id="conversational-bi-os",
     name="KPI Commentary Tool",
     description="P&C portfolio Q&A with guarded SQL, charts, and grounded commentary.",
-    teams=[bi_team],
+    teams=build_all_teams(db=db),
     db=db,
     tracing=True,
     lifespan=lifespan,
@@ -74,67 +52,7 @@ agent_os = AgentOS(
 )
 
 app = agent_os.get_app()
-
-
-@app.get("/provenance/{session_id}")
-async def provenance(session_id: str, since: float = 0.0) -> dict:
-    """Queries executed for a session after `since` (unix seconds). The UI
-    fetches this when a run completes and renders a per-answer "Sources" panel:
-    the exact SQL, rows returned and timing behind every figure shown."""
-    schema = data_layer.get_schema()
-    return {
-        "table": schema["table"],
-        "table_rows": schema["row_count"],
-        "queries": tools.get_provenance(session_id, since=since),
-    }
-
-
-@app.get("/dashboard")
-async def dashboard() -> dict:
-    """On-load portfolio overview: headline KPIs + the standard cuts, computed
-    from real SQL. The UI renders this immediately so the app opens on a live
-    dashboard the user can drill into via chat."""
-    return tools.dashboard_payload()
-
-
-@app.post("/datasets/upload")
-async def upload_dataset(file: UploadFile = File(...)) -> dict:
-    """Accept a tabular upload and reload the in-memory DuckDB book."""
-    filename = file.filename or "upload"
-    ext = Path(filename).suffix.lower()
-    if ext not in _DATA_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file type {ext!r}. Use .xlsx, .xls or .csv.",
-        )
-
-    content = await file.read()
-    if len(content) > config.UPLOAD_MAX_BYTES:
-        raise HTTPException(
-            status_code=413,
-            detail=(
-                f"File exceeds maximum size of "
-                f"{config.UPLOAD_MAX_BYTES // (1024 * 1024)} MB."
-            ),
-        )
-
-    try:
-        df = data_layer.read_dataframe_from_upload(filename, content)
-        schema = data_layer.reload_book(df)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to parse upload: {exc}",
-        ) from exc
-
-    return {
-        "filename": filename,
-        "row_count": len(df),
-        "columns": list(df.columns),
-        "schema": schema,
-    }
+app.include_router(api_router)
 
 
 if __name__ == "__main__":

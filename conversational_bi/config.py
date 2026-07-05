@@ -56,7 +56,7 @@ NUM_FOLLOWUPS = int(os.getenv("BI_NUM_FOLLOWUPS", "3"))
 
 def followup_model():
     """Schema-grounded Gemini used only for followup generation."""
-    from .followups import GroundedFollowupGemini
+    from .models.followups import GroundedFollowupGemini
 
     api_key = os.getenv("GOOGLE_API_KEY")
     return GroundedFollowupGemini(id=GEMINI_MODEL, api_key=api_key)
