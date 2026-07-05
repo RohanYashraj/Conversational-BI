@@ -17,6 +17,7 @@ import { useQueryState } from 'nuqs'
 import { truncateText } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { ChevronDown, Settings2 } from 'lucide-react'
 
 const ENDPOINT_PLACEHOLDER = 'NO ENDPOINT ADDED'
 
@@ -281,8 +282,86 @@ const Endpoint = () => {
   )
 }
 
+/**
+ * Connection & workspace plumbing (endpoint, auth, mode, model), tucked into
+ * a collapsible group at the sidebar's bottom edge — the spot public LLM apps
+ * reserve for settings. Collapsed by default so conversations stay the hero;
+ * auto-opens when the endpoint is down so the fix is one glance away.
+ */
+const SidebarSettings = ({
+  hasEnvToken,
+  envToken
+}: {
+  hasEnvToken?: boolean
+  envToken?: string
+}) => {
+  const { isEndpointActive, isEndpointLoading, selectedModel } = useStore()
+  const [open, setOpen] = useState(false)
+  const [agentId] = useQueryState('agent')
+  const [teamId] = useQueryState('team')
+
+  // Surface the connection controls whenever the endpoint is unreachable.
+  useEffect(() => {
+    if (!isEndpointActive) setOpen(true)
+  }, [isEndpointActive])
+
+  return (
+    <div className={`mt-auto shrink-0 border-t border-border/60 ${sidebarTrack}`}>
+      {open && (
+        <div className="flex flex-col gap-4 pb-2 pt-3">
+          <Endpoint />
+          <AuthToken hasEnvToken={hasEnvToken} envToken={envToken} />
+          <div className="flex flex-col items-stretch gap-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Mode
+            </div>
+            {isEndpointLoading ? (
+              <div className="flex w-full flex-col gap-2">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <Skeleton key={index} className="h-9 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <>
+                <ModeSelector />
+                <EntitySelector />
+                {selectedModel && (agentId || teamId) && (
+                  <ModelDisplay model={selectedModel} />
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Settings2 className="size-3.5 shrink-0" aria-hidden="true" />
+        <span className="flex-1 text-left">Settings</span>
+        <span
+          className={`size-2 shrink-0 rounded-full ${
+            isEndpointActive ? 'bg-positive' : 'bg-destructive'
+          }`}
+          title={isEndpointActive ? 'Connected' : 'Disconnected'}
+        />
+        <ChevronDown
+          className={`size-3.5 shrink-0 transition-transform duration-200 ${
+            open ? '' : 'rotate-180'
+          }`}
+          aria-hidden="true"
+        />
+      </button>
+    </div>
+  )
+}
+
 /** Everything inside the sidebar — shared by the desktop rail and the mobile
- * overlay drawer (the pattern ChatGPT/Claude use on small screens). */
+ * overlay drawer (the pattern ChatGPT/Claude use on small screens). Layout
+ * follows public LLM apps: brand + New Chat on top, the conversation list as
+ * the dominant scrollable middle, settings pinned to the bottom. */
 const SidebarBody = ({
   hasEnvToken,
   envToken
@@ -291,17 +370,8 @@ const SidebarBody = ({
   envToken?: string
 }) => {
   const { clearChat, focusChatInput } = useChatActions()
-  const {
-    messages,
-    isEndpointActive,
-    selectedModel,
-    isEndpointLoading,
-    setIsSidebarOpen
-  } = useStore()
+  const { messages, isEndpointActive, setIsSidebarOpen } = useStore()
   const [isMounted, setIsMounted] = useState(false)
-  const [agentId] = useQueryState('agent')
-  const [teamId] = useQueryState('team')
-  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     setIsMounted(true)
@@ -324,45 +394,18 @@ const SidebarBody = ({
       </div>
       {isMounted && (
         <>
-          <div className={`shrink-0 space-y-5 ${sidebarTrack}`}>
-            <Endpoint />
-            <AuthToken hasEnvToken={hasEnvToken} envToken={envToken} />
-          </div>
-          {isEndpointActive && (
-            <>
-              <motion.div
-                className={`flex shrink-0 flex-col items-stretch gap-2 ${sidebarTrack}`}
-                initial={{ opacity: reduceMotion ? 1 : 0 }}
-                animate={{ opacity: 1 }}
-                transition={{
-                  duration: reduceMotion ? 0 : 0.5,
-                  ease: 'easeInOut'
-                }}
-              >
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Mode
-                </div>
-                {isEndpointLoading ? (
-                  <div className="flex w-full flex-col gap-2">
-                    {Array.from({ length: 3 }).map((_, index) => (
-                      <Skeleton key={index} className="h-9 w-full rounded-xl" />
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <ModeSelector />
-                    <EntitySelector />
-                    {selectedModel && (agentId || teamId) && (
-                      <ModelDisplay model={selectedModel} />
-                    )}
-                  </>
-                )}
-              </motion.div>
-              <div className={`flex min-h-0 flex-1 flex-col ${sidebarTrack}`}>
-                <Sessions />
-              </div>
-            </>
+          {isEndpointActive ? (
+            <div className={`flex min-h-0 flex-1 flex-col ${sidebarTrack}`}>
+              <Sessions />
+            </div>
+          ) : (
+            <div className={`flex min-h-0 flex-1 flex-col ${sidebarTrack}`}>
+              <p className="pt-1 text-xs leading-relaxed text-muted-foreground/70">
+                Not connected. Check the endpoint under Settings below.
+              </p>
+            </div>
           )}
+          <SidebarSettings hasEnvToken={hasEnvToken} envToken={envToken} />
         </>
       )}
     </>

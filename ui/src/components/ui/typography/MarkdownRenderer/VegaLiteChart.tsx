@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+import { Download } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useQueryState } from 'nuqs'
 
@@ -57,6 +58,25 @@ const VegaLiteChart = ({ source, fullWidth = false }: VegaLiteChartProps) => {
   const [teamId] = useQueryState('team')
   const canDrill = Boolean(agentId || teamId)
 
+  // Live vega view, kept for PNG export.
+  const viewRef = useRef<{
+    toImageURL: (type: string, scaleFactor?: number) => Promise<string>
+  } | null>(null)
+
+  const handleDownloadPng = () => {
+    viewRef.current
+      ?.toImageURL('png', 2)
+      .then((url) => {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'chart.png'
+        link.click()
+      })
+      .catch(() => {
+        /* export is best-effort */
+      })
+  }
+
   // Ref so the embed effect always sees the current send function without
   // re-embedding the chart on every streaming-state change.
   const drillRef = useRef<((prompt: string) => void) | null>(null)
@@ -97,6 +117,9 @@ const VegaLiteChart = ({ source, fullWidth = false }: VegaLiteChartProps) => {
       .then((result) => {
         if (!result) return
         view = result.view
+        viewRef.current = result.view as unknown as {
+          toImageURL: (type: string, scaleFactor?: number) => Promise<string>
+        }
         // Click a mark to drill into that datum via chat.
         result.view.addEventListener('click', (_event, item) => {
           const datum = (item as { datum?: Record<string, unknown> } | null)
@@ -113,6 +136,7 @@ const VegaLiteChart = ({ source, fullWidth = false }: VegaLiteChartProps) => {
 
     return () => {
       cancelled = true
+      viewRef.current = null
       view?.finalize()
     }
     // Re-embed when the spec text or theme changes.
@@ -136,10 +160,20 @@ const VegaLiteChart = ({ source, fullWidth = false }: VegaLiteChartProps) => {
 
   return (
     <div
-      className={`my-2 w-full overflow-x-auto rounded-md border border-border bg-background p-3 ${
+      className={`group/chart relative my-2 w-full overflow-x-auto rounded-md border border-border bg-background p-3 ${
         fullWidth ? '' : 'max-w-[560px]'
       }`}
     >
+      <button
+        type="button"
+        onClick={handleDownloadPng}
+        aria-label="Download chart as PNG"
+        title="Download PNG"
+        className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1 rounded-md border border-border/60 bg-card/90 px-1.5 py-1 text-[0.65rem] font-medium text-muted-foreground opacity-0 shadow-sm backdrop-blur-sm transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/chart:opacity-100"
+      >
+        <Download className="size-3" aria-hidden="true" />
+        PNG
+      </button>
       <div
         ref={containerRef}
         className={`w-full ${canDrill ? '[&_svg]:cursor-pointer' : ''}`}

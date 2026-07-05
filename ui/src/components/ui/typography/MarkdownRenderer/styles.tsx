@@ -1,6 +1,7 @@
 'use client'
 
-import { FC, ReactNode, useState } from 'react'
+import { FC, ReactNode, useRef, useState } from 'react'
+import { Download } from 'lucide-react'
 
 import Image from 'next/image'
 import Link from 'next/link'
@@ -250,13 +251,57 @@ const Img = ({ src, alt }: ImgProps) => {
   )
 }
 
-const Table = ({ className, ...props }: TableProps) => (
-  <div className="w-full max-w-[560px] overflow-hidden rounded-md border border-border">
-    <div className="w-full overflow-x-auto">
-      <table className={cn(className, 'w-full')} {...filterProps(props)} />
+/** Serialize a rendered table to CSV, quoting cells that need it. */
+const tableToCsv = (table: HTMLTableElement): string => {
+  const escapeCell = (value: string) =>
+    /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+  return Array.from(table.rows)
+    .map((row) =>
+      Array.from(row.cells)
+        .map((cell) => escapeCell((cell.textContent ?? '').trim()))
+        .join(',')
+    )
+    .join('\n')
+}
+
+const Table = ({ className, ...props }: TableProps) => {
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  const handleDownloadCsv = () => {
+    const table = wrapRef.current?.querySelector('table')
+    if (!table) return
+    const blob = new Blob([tableToCsv(table)], {
+      type: 'text/csv;charset=utf-8;'
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'table.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div
+      ref={wrapRef}
+      className="group/table relative w-full max-w-[560px] overflow-hidden rounded-md border border-border"
+    >
+      <button
+        type="button"
+        onClick={handleDownloadCsv}
+        aria-label="Download table as CSV"
+        title="Download CSV"
+        className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1 rounded-md border border-border/60 bg-card/90 px-1.5 py-1 text-[0.65rem] font-medium text-muted-foreground opacity-0 shadow-sm backdrop-blur-sm transition-opacity hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/table:opacity-100"
+      >
+        <Download className="size-3" aria-hidden="true" />
+        CSV
+      </button>
+      <div className="w-full overflow-x-auto">
+        <table className={cn(className, 'w-full')} {...filterProps(props)} />
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 const TableHead = ({ className, ...props }: TableHeaderProps) => (
   <thead
